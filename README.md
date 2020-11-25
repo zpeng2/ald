@@ -1,2 +1,2 @@
-# channelstab
-Linear stability of active suspensions in a channel.
+# ald
+Active Langevin dynamics.
