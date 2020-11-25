@@ -249,12 +249,18 @@ class Configuration:
         )
         self.uf = uf
         self.N = int(N)
+        # current configuration
         self.x = gpuarray.GPUArray(N, dtype=np.float64)
         self.y = gpuarray.GPUArray(N, dtype=np.float64)
         self.theta = gpuarray.GPUArray(N, dtype=np.float64)
+        # configuration at previous time step
         self.x_old = gpuarray.GPUArray(N, dtype=np.float64)
         self.y_old = gpuarray.GPUArray(N, dtype=np.float64)
         self.theta_old = gpuarray.GPUArray(N, dtype=np.float64)
+        # initial configuration,
+        self.x0 = gpuarray.GPUArray(N, dtype=np.float64)
+        self.y0 = gpuarray.GPUArray(N, dtype=np.float64)
+        self.theta0 = gpuarray.GPUArray(N, dtype=np.float64)
         # curandstate array.
         sizeof_state = pycuda.characterize.sizeof(
             "curandStateXORWOW", "#include <curand_kernel.h>"
@@ -412,18 +418,18 @@ class Simulator:
         self.launch_kernel(
             self.init_config,
             cfg.state,
-            cfg.x,
-            cfg.y,
-            cfg.theta,
+            cfg.x0,
+            cfg.y0,
+            cfg.theta0,
             np.float64(self.box.L),
             np.float64(self.box.H),
             np.int32(cfg.N),
         )
 
         # need to fill x,y,theta old too
-        cfg.x_old = cfg.x.copy()
-        cfg.y_old = cfg.y.copy()
-        cfg.theta_old = cfg.theta.copy()
+        cfg.x_old = cfg.x0.copy()
+        cfg.y_old = cfg.y0.copy()
+        cfg.theta_old = cfg.theta0.copy()
         # need to initialize passx and passy to 0
         cfg.passx.fill(0)
         cfg.passy.fill(0)
