@@ -48,12 +48,15 @@ class Callback(ABC):
 class StatsCallback(Callback):
     """Compute mean and variance of a GPUArray."""
 
-    def __init__(self, inrange, attr):
+    def __init__(self, inrange, attr, unwrap=False):
         if not isinstance(inrange, InRange):
             raise TypeError("wrong type {}".format(type(inrange)))
         self.iscomputing = inrange
         # which cfg attribute to do statistics.
         self.attr = attr
+        # unwrap periodic to get absolute positions.
+        # TODO
+        self.unwrap = unwrap
         # instantiate arrays to store mean and variance
         self._mean = np.zeros(len(inrange))
         self._variance = np.zeros_like(self._mean)
