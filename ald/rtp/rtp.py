@@ -1,5 +1,5 @@
 from os.path import isfile
-from typing import ValuesView
+from typing import Type, ValuesView
 from numpy.lib.arraysetops import isin
 import pycuda.autoinit
 import pycuda.curandom
@@ -10,6 +10,7 @@ import numpy as np
 from jinja2 import Template
 import os
 import h5py
+from abc import abstractmethod, ABC
 
 
 cuda_code = """
@@ -271,6 +272,8 @@ class Configuration:
         self.passy = gpuarray.GPUArray(N, dtype=np.int32)
         self.tauR = gpuarray.GPUArray(N, dtype=np.float64)
         self.tau = gpuarray.GPUArray(N, dtype=np.float64)
+        # current time
+        self.t = 0.0
 
     @classmethod
     def from_freespace(cls, rtp=RTP(), L=1.0, N=1000000):
@@ -318,6 +321,9 @@ class Simulator:
         self.nblocks = config.N // self.threadsPerBlock + 1
         if self.nblocks > 500:
             self.nblocks = 500
+        #
+        self._isinitialized = False
+        # need to call self.initialize to initialize the simulator and system.
 
     def generate_bdrtp(self):
         if isinstance(self.rtp, RTP):
@@ -451,14 +457,16 @@ class Simulator:
             )
         else:
             raise NotImplementedError()
+        # indicate that the system is initialized
+        self._isinitialized = True
 
         return None
 
-    def simulate(self, cfg):
+    def simulate(self, cfg, dt, Nt, callbacks=None):
         """Run Langevin simulation"""
-        Nt = 1000000
-        t = 0.0
-        dt = 1e-4
+        if not self._isinitialized:
+            self.initialize(cfg)
+
         if isinstance(cfg.rtp, Pareto):
             alpha = cfg.rtp.alpha
         else:
@@ -488,9 +496,101 @@ class Simulator:
                 np.float64(cfg.rtp.tauR),
                 np.float64(alpha),
             )
-            if i % 50000 == 0:
-                print(gpuarray.sum((cfg.x + cfg.passx * cfg.box.L) / cfg.N))
-            t += dt
+            if callbacks is not None:
+                # accepts an iterable of callbacks.
+                if not hasattr(callbacks, "__iter__"):
+                    # maybe the user passed in a single callback
+                    # try wrap it with a list
+                    callbacks = [callbacks]
+                # run each callback function
+                for callback in callbacks:
+                    callback(i, cfg)
+
+            cfg.t += dt
+
+
+class InRange:
+    """Validate whether an integer is in a python range."""
+
+    def __init__(self, start, stop, freq):
+        # python range is end-exclusive.
+        self._range = range(start, stop + freq, freq)
+
+    @classmethod
+    def from_forward_count(cls, start=0, freq=1, count=10):
+        """Constructor that takes the start, freq and number of points."""
+        stop = start + (count - 1) * freq
+        return cls(start, stop, freq)
+
+    @classmethod
+    def from_backward_count(cls, stop=100, freq=1, count=10):
+        """Constructor that takes the stop, freq and number of points."""
+        start = stop - (count - 1) * freq
+        # require start to be positive, otherwise pointless
+        if start < 0:
+            raise ValueError("start={} is negative".format(start))
+        return cls(start, stop, freq)
+
+    def __call__(self, i):
+        """Check if a given integer is included in _range."""
+        if i in self._range:
+            return True
+        else:
+            return False
+
+    def __len__(self):
+        return len(self._range)
+
+
+class Callback(ABC):
+    """Callback that computes/stores information as the simulation evolves."""
+
+    @abstractmethod
+    def __call__(self, *args, **kwargs):
+        pass
+
+
+class StatsCallback(Callback):
+    """Compute mean and variance of a GPUArray."""
+
+    def __init__(self, inrange):
+        if not isinstance(inrange, InRange):
+            raise TypeError("wrong type {}".format(type(inrange)))
+        self.iscomputing = inrange
+        # instantiate arrays to store mean and variance
+        self._mean = np.zeros(len(inrange))
+        self._variance = np.zeros_like(self._mean)
+        # counter for storing data into mean and variance arrays.
+        self.i = 0
+
+    def mean_variance(self, cfg):
+        N = len(cfg.x)
+        mean_x = gpuarray.sum(cfg.x) / N
+        # copy to cpu and flatten
+        mean_x = float(mean_x.get())
+        # compute variance
+        variance_x = gpuarray.sum((cfg.x - mean_x ** 2)) / N
+        variance_x = float(variance_x.get())
+        return mean_x, variance_x
+
+    def __call__(self, i, cfg):
+        if self.iscomputing(i):
+            m, v = self.mean_variance(cfg)
+            self._mean[self.i] = m
+            self._variance[self.i] = v
+            self.i += 1
+        return None
+
+
+class PrintCallback(Callback):
+    def __init__(self, inrange):
+        if not isinstance(inrange, InRange):
+            raise TypeError("wrong type {}".format(type(inrange)))
+        self.iscomputing = inrange
+
+    def __call__(self, i, cfg):
+        if self.iscomputing(i):
+            print("t = {:.3f}".format(cfg.t))
 
 
 # rtp = RTP()
