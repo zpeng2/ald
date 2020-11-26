@@ -5,16 +5,19 @@ from .configs import AbstractConfig
 # TODO: in the template function for RTP, can add flow(basically arbitrary external velocities) easily, because for a simulation, we already know the flow parameters, they can be replaced at compile time by numbers, so that no additional arguments need to be passed to the general cuda kernel!!
 
 
-class AbstractSimulator:
+class AbstractSimulator(ABC):
     """Langevin simulation of particles in 2D (channel or freespace.)"""
 
-    def __init__(self, cfg):
-        if not isinstance(cfg, AbstractConfig):
-            raise TypeError("invalid type: {} ".format(type(cfg)))
-        self.particle = cfg.particle
-        # self.box = cfg.box !!TODO: add box in cfg
-        self._isinitialized = False
+    @property
+    @abstractmethod
+    def particle(self):
+        pass
+
+    @property
+    @abstractmethod
+    def _isinitialized(self):
         # need to call self.initialize to initialize the simulator and system.
+        pass
 
     @abstractmethod
     def initialize(self, cfg, *args, **kwargs):
