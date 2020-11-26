@@ -12,6 +12,8 @@ import os
 import h5py
 from abc import abstractmethod, ABC
 
+#
+import ald.core as core
 
 cuda_code = """
 #include <cuda_runtime.h>
@@ -95,9 +97,7 @@ bd_rtp(double *__restrict__ xold,       // old position in x
        double L,    // simulation box length in x
        double H,    // channel width, also simulation box size in y
        double dt,   // time step
-       int N,       // total number of active particles.
-       double tauavg, // average runtime of the runtime distribution.
-       double alpha) // exponent in Pareto distribution
+       int N)
 
 {
     // for loop allows more particles than threads.
@@ -111,8 +111,7 @@ bd_rtp(double *__restrict__ xold,       // old position in x
       // reset time since last tumble to zero.
       tau[tid] = 0.0;
       // after tumbling, need to draw a new tumbling time.
-      // tauR[tid] = pareto_runtime(&state[tid], tauR, alpha);
-      tauR[tid] = {{runtimefun}}(&state[tid], tauavg, alpha);
+      tauR[tid] = {{runtime}};
     }
     // next update the position and orientation
     x[tid] =
@@ -154,37 +153,6 @@ bd_rtp(double *__restrict__ xold,       // old position in x
 }
 """
 )
-
-
-class AbstractRTP:
-    def __init__(self, U0=1.0, tauR=1.0):
-        # tauR is the mean runtime.
-        self.tauR = tauR
-        self.U0 = U0
-
-
-class RTP(AbstractRTP):
-    """Constant runtime RTP."""
-
-    def __init__(self, U0=1.0, tauR=1.0):
-        super().__init__(U0=U0, tauR=tauR)
-
-    def __repr__(self):
-        return "RTP(U0 = {:.3f}, tauR= {:.3f})".format(self.U0, self.tauR)
-
-
-class Pareto(AbstractRTP):
-    def __init__(self, U0=1.0, tauR=1.0, alpha=1.2):
-        super().__init__(U0, tauR)
-        self.alpha = alpha
-        self.taum = (alpha - 1) * tauR / alpha
-
-    def __repr__(self):
-        return (
-            "Pareto(U0 = {:.3f}, tauR= {:.3f}, alpha = {:.2f}, taum = {:.3f})".format(
-                self.U0, self.tauR, self.alpha, self.taum
-            )
-        )
 
 
 class BC:
@@ -229,7 +197,7 @@ class Box:
 class Configuration:
     def __init__(
         self,
-        rtp=RTP(),
+        rtp=core.RTP(),
         L=1.0,
         H=1.0,
         left_bc=Periodic(),
@@ -276,7 +244,7 @@ class Configuration:
         self.t = 0.0
 
     @classmethod
-    def from_freespace(cls, rtp=RTP(), L=1.0, N=1000000):
+    def from_freespace(cls, rtp=core.RTP(), L=1.0, N=1000000):
         return cls(
             rtp=rtp,
             L=L,
@@ -290,7 +258,7 @@ class Configuration:
         )
 
     @classmethod
-    def from_Poiseuille(cls, rtp=RTP(), H=1.0, uf=1.0, N=1000000):
+    def from_Poiseuille(cls, rtp=core.RTP(), H=1.0, uf=1.0, N=1000000):
         return cls(
             rtp=rtp,
             L=H,
@@ -326,10 +294,12 @@ class Simulator:
         # need to call self.initialize to initialize the simulator and system.
 
     def generate_bdrtp(self):
-        if isinstance(self.rtp, RTP):
-            runtimefun = "constant_runtime"
-        elif isinstance(self.rtp, Pareto):
-            runtimefun = "pareto_runtime"
+        if isinstance(self.rtp, core.RTP):
+            runtime = "{}".format(self.rtp.tauR)
+        elif isinstance(self.rtp, core.Pareto):
+            runtime = "pareto_runtime(&state[tid], {}, {})".format(
+                self.rtp.tauR, self.rtp.alpha
+            )
         else:
             raise NotImplementedError()
 
@@ -363,7 +333,7 @@ class Simulator:
 
         # render the bd_rtp template
         bd_rtp = template.render(
-            runtimefun=runtimefun,
+            runtime=runtime,
             top_bc=top_bc,
             bottom_bc=bottom_bc,
             left_bc=left_bc,
@@ -442,10 +412,10 @@ class Simulator:
         # similarly, time since last reorientation is zero,.
         cfg.tau.fill(0.0)
         # need to initialize the runtime for each particle.
-        if isinstance(self.rtp, RTP):
+        if isinstance(self.rtp, core.RTP):
             # constant runtime.
             cfg.tauR.fill(self.rtp.tauR)
-        elif isinstance(self.rtp, Pareto):
+        elif isinstance(self.rtp, core.Pareto):
             # Pareto distributed runtimes.
             self.launch_kernel(
                 self.draw_pareto_runtimes,
@@ -462,16 +432,10 @@ class Simulator:
 
         return None
 
-    def simulate(self, cfg, dt, Nt, callbacks=None):
+    def run(self, cfg, dt, Nt, callbacks=None):
         """Run Langevin simulation"""
         if not self._isinitialized:
             self.initialize(cfg)
-
-        if isinstance(cfg.rtp, Pareto):
-            alpha = cfg.rtp.alpha
-        else:
-            # in this case, its a dummy variable.
-            alpha = 0.0
 
         for i in range(Nt):
             self.launch_kernel(
@@ -493,8 +457,6 @@ class Simulator:
                 np.float64(cfg.box.H),
                 np.float64(dt),
                 np.int32(cfg.N),
-                np.float64(cfg.rtp.tauR),
-                np.float64(alpha),
             )
             if callbacks is not None:
                 # accepts an iterable of callbacks.
@@ -507,90 +469,6 @@ class Simulator:
                     callback(i, cfg)
 
             cfg.t += dt
-
-
-class InRange:
-    """Validate whether an integer is in a python range."""
-
-    def __init__(self, start, stop, freq):
-        # python range is end-exclusive.
-        self._range = range(start, stop + freq, freq)
-
-    @classmethod
-    def from_forward_count(cls, start=0, freq=1, count=10):
-        """Constructor that takes the start, freq and number of points."""
-        stop = start + (count - 1) * freq
-        return cls(start, stop, freq)
-
-    @classmethod
-    def from_backward_count(cls, stop=100, freq=1, count=10):
-        """Constructor that takes the stop, freq and number of points."""
-        start = stop - (count - 1) * freq
-        # require start to be positive, otherwise pointless
-        if start < 0:
-            raise ValueError("start={} is negative".format(start))
-        return cls(start, stop, freq)
-
-    def __call__(self, i):
-        """Check if a given integer is included in _range."""
-        if i in self._range:
-            return True
-        else:
-            return False
-
-    def __len__(self):
-        return len(self._range)
-
-
-class Callback(ABC):
-    """Callback that computes/stores information as the simulation evolves."""
-
-    @abstractmethod
-    def __call__(self, *args, **kwargs):
-        pass
-
-
-class StatsCallback(Callback):
-    """Compute mean and variance of a GPUArray."""
-
-    def __init__(self, inrange):
-        if not isinstance(inrange, InRange):
-            raise TypeError("wrong type {}".format(type(inrange)))
-        self.iscomputing = inrange
-        # instantiate arrays to store mean and variance
-        self._mean = np.zeros(len(inrange))
-        self._variance = np.zeros_like(self._mean)
-        # counter for storing data into mean and variance arrays.
-        self.i = 0
-
-    def mean_variance(self, cfg):
-        N = len(cfg.x)
-        mean_x = gpuarray.sum(cfg.x) / N
-        # copy to cpu and flatten
-        mean_x = float(mean_x.get())
-        # compute variance
-        variance_x = gpuarray.sum((cfg.x - mean_x ** 2)) / N
-        variance_x = float(variance_x.get())
-        return mean_x, variance_x
-
-    def __call__(self, i, cfg):
-        if self.iscomputing(i):
-            m, v = self.mean_variance(cfg)
-            self._mean[self.i] = m
-            self._variance[self.i] = v
-            self.i += 1
-        return None
-
-
-class PrintCallback(Callback):
-    def __init__(self, inrange):
-        if not isinstance(inrange, InRange):
-            raise TypeError("wrong type {}".format(type(inrange)))
-        self.iscomputing = inrange
-
-    def __call__(self, i, cfg):
-        if self.iscomputing(i):
-            print("t = {:.3f}".format(cfg.t))
 
 
 # rtp = RTP()
