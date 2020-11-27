@@ -33,6 +33,8 @@ class RTP(AbstractRTP):
 
     def __init__(self, U0=1.0, tauR=1.0):
         super().__init__(U0=U0, tauR=tauR)
+        # cuda code for runtime.
+        self.runtime_code = "{}".format(self.tauR)
 
     def __repr__(self):
         return "RTP(U0 = {:.3f}, tauR= {:.3f})".format(self.U0, self.tauR)
@@ -43,6 +45,10 @@ class Pareto(AbstractRTP):
         super().__init__(U0=U0, tauR=tauR)
         self.alpha = alpha
         self.taum = (alpha - 1) * tauR / alpha
+        # see compiler for details.
+        self.runtime_code = "pareto_runtime(&state[tid], {}, {})".format(
+            self.tauR, self.alpha
+        )
 
     def __repr__(self):
         return (

@@ -1,4 +1,3 @@
-from ald.rtp.rtp import Simulator
 import pycuda.gpuarray as gpuarray
 from abc import abstractmethod, ABC
 import numpy as np
@@ -61,6 +60,8 @@ class MeanVariance(Callback):
         # instantiate arrays to store mean and variance
         self.m = np.zeros(len(inrange))
         self.v = np.zeros_like(self.m)
+        # keep track of time
+        self.t = np.zeros_like(self.m)
         # index used to store values
         self.idx = 0
 
@@ -94,6 +95,7 @@ class MeanVariance(Callback):
             m, v = self.mean_variance(cfg)
             self.m[self.idx] = m
             self.v[self.idx] = v
+            self.t[self.idx] = cfg.t
             self.idx += 1
         return None
 

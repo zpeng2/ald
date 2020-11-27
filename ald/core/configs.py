@@ -10,7 +10,7 @@ from .particles import AbstractParticle, AbstractRTP
 
 
 class AbstractConfig:
-    def __init__(self, particle, N):
+    def __init__(self, particle, box, N, dt, Nt):
         # particle needs to be a subtype of AbatractParticle
         if not isinstance(particle, AbstractParticle):
             raise TypeError("{} is not a subclass of AbstractParticle".format(particle))
@@ -18,8 +18,14 @@ class AbstractConfig:
             raise TypeError("{} is not an integer.".format(N))
         # keep a copy of the particle object
         self.particle = particle
+        # keep a copy of the domain object
+        self.box = box
         # keep the number of particles
         self.N = N
+        # time step
+        self.dt = dt
+        # total number of steps
+        self.Nt = Nt
         # common configuration data
         # initial configuration of the particle system
         self.x0 = gpuarray.GPUArray(N, dtype=np.float64)
@@ -41,8 +47,8 @@ class AbstractConfig:
 
 
 class Config(AbstractConfig):
-    def __init__(self, particle, N):
-        super().__init__(particle, N)
+    def __init__(self, particle, box, N, dt, Nt):
+        super().__init__(particle, box, N, dt, Nt)
         # additional configuration info specifically for RTPs.
         if isinstance(particle, AbstractRTP):
             # curandstate array.
