@@ -9,6 +9,23 @@ import numpy as np
 from .particles import AbstractParticle, AbstractRTP
 
 
+# class AbstractDistribution:
+#     """Abstract class for describing a distribution."""
+
+#     pass
+# class PointDistribution(AbstractDistribution):
+#     def __init__(self, symbol, loc):
+#         #symbol is the variable and loc is the value.
+#         self.symbol = symbol
+
+# class AbstractIC(ABC):
+#     """Abstract class for describing initial conditions of the particle system."""
+
+#     @abstractmethod
+#     def gen_cuda_code(self, *args, **kwargs):
+#         pass
+
+
 class AbstractConfig:
     def __init__(self, particle, box, N, dt, Nt):
         # particle needs to be a subtype of AbatractParticle
