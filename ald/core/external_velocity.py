@@ -20,7 +20,7 @@ class EmptyVelocity(ExternalVelocity):
     """No external velocities."""
 
     def __init__(self):
-        super.__init__(ux="0", uy="0", omega="0")
+        super().__init__(ux="0", uy="0", omega="0")
 
 
 class Poiseuille(ExternalVelocity):

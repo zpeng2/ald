@@ -1,16 +1,14 @@
-from ald.core import particles
-from ald.core.compiler import RTPCompiler
 import ald
 
-particle = ald.RTP()
+particle = ald.Pareto()
+flow = ald.Poiseuille()
 
-box = ald.Box.from_freespace()
+box = ald.Box.from_channel()
 
 cfg = ald.Config(particle, box, N=204800, dt=1e-4, Nt=1000000)
 
-flow = ald.Poiseuille()
 
-compiler = RTPCompiler(particle, box, flow)
+compiler = ald.RTPCompiler(particle, box, flow)
 
 simulator = ald.Simulator(cfg, compiler)
 
