@@ -3,7 +3,7 @@ from .boundary import AbstractBC, NoFlux, Periodic, AbstractBox, Box
 
 from .configs import AbstractConfig, Config
 
-from .external_velocity import ExternalVelocity, Poiseuille
+from .external_velocity import ExternalVelocity, EmptyVelocity, Poiseuille
 
 from .compiler import AbstractCompiler, RTPCompiler
 

@@ -1,17 +1,8 @@
 from abc import abstractmethod, ABC
-
-from numpy.lib.function_base import insert
 from ald.core.compiler import AbstractCompiler
-
-from numpy.lib.arraysetops import isin
-
 from ald.core.configs import AbstractConfig
 from ald.core.particles import RTP, Pareto
-
 import numpy as np
-
-
-# TODO: in the template function for RTP, can add flow(basically arbitrary external velocities) easily, because for a simulation, we already know the flow parameters, they can be replaced at compile time by numbers, so that no additional arguments need to be passed to the general cuda kernel!!
 
 
 class AbstractSimulator(ABC):
@@ -35,7 +26,7 @@ class AbstractSimulator(ABC):
         if not self.isinitialized:
             self.initialize(cfg)
 
-        for i in range(cfg.Nt):
+        for i in range(cfg.Nt + 1):
             self.update(cfg)
             if callbacks is not None:
                 # accepts an iterable of callbacks.

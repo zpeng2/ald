@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
-from ald.core.particles import AbstractParticle, AbstractRTP, Pareto
-from ald.core.external_velocity import ExternalVelocity
-from ald.core.boundary import AbstractBox
+from ald.core.particles import AbstractParticle, AbstractRTP, Pareto, RTP
+from ald.core.external_velocity import ExternalVelocity, EmptyVelocity, Poiseuille
+from ald.core.boundary import AbstractBox, Box
 import pycuda.autoinit
 import pycuda.curandom
 import pycuda.compiler as compiler
@@ -157,7 +157,7 @@ class AbstractCompiler(ABC):
 class RTPCompiler(AbstractCompiler):
     """Cuda code compiler for RTPs."""
 
-    def __init__(self, particle, box, flow):
+    def __init__(self, particle=RTP(), box=Box.from_freespace(), flow=EmptyVelocity()):
         if not isinstance(particle, AbstractRTP):
             raise TypeError()
         if not isinstance(box, AbstractBox):

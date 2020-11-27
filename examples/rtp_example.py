@@ -6,7 +6,7 @@ particle = ald.RTP()
 
 box = ald.Box.from_freespace()
 
-cfg = ald.Config(particle, box, N=204800, dt=1e-4, Nt=204800)
+cfg = ald.Config(particle, box, N=204800, dt=1e-4, Nt=1000000)
 
 flow = ald.Poiseuille()
 
