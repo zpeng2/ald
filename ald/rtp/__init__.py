@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from .callbacks import (
-    InRange,
-    Callback,
-    StatsCallback,
-    PrintCallback,
-)
+from .callbacks import InRange, Callback, MeanVariance, PrintCallback, ETA
 
 
 from .rtp import (

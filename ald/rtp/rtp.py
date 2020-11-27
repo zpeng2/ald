@@ -63,11 +63,11 @@ __device__ double constant_runtime(curandState *state, double tauR, ...) {
 
 // initialize particle configuration
 __global__ void init_config(curandState *state, double *x, double *y,
-                            double *theta, double L, double H, const int N) {
+                            double *theta, double Lx, double Ly, const int N) {
   for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
        tid += blockDim.x * gridDim.x) {
     x[tid] = 0.0;
-    y[tid] = (curand_uniform_double(&state[tid]) - 0.5) * H;
+    y[tid] = (curand_uniform_double(&state[tid]) - 0.5) * Ly;
     theta[tid] = curand_uniform_double(&state[tid]) * 2 * PI;
   }
 } // end function
@@ -94,8 +94,8 @@ bd_rtp(double *__restrict__ xold,       // old position in x
        double *__restrict__ tau,  // time since last reorientation.
        double U0,                 // ABP swim speed
        double uf,                 // flow speed centerline
-       double L,    // simulation box length in x
-       double H,    // channel width, also simulation box size in y
+       double Lx,    // simulation box length in x
+       double Ly,    // channel width, also simulation box size in y
        double dt,   // time step
        int N)
 
@@ -115,32 +115,32 @@ bd_rtp(double *__restrict__ xold,       // old position in x
     }
     // next update the position and orientation
     x[tid] =
-        xold[tid] + dt * uf * (1.0 - 4.0 * yold[tid] * yold[tid] / (H * H)) +
+        xold[tid] + dt * uf * (1.0 - 4.0 * yold[tid] * yold[tid] / (Ly * Ly)) +
         dt * U0 * cos(thetaold[tid]);
 
     y[tid] = yold[tid] + dt * U0 * sin(thetaold[tid]);
 
     // theta is only changing due to the vorticity of the flow at this stage!
-    theta[tid] = thetaold[tid] + dt * 4 * uf * yold[tid] / (H * H);
+    theta[tid] = thetaold[tid] + dt * 4 * uf * yold[tid] / (Ly * Ly);
     // need to update time since last tumble.
     tau[tid] += dt;
 
     // check and record boundary crossing.
     // periodic in x
     // boundary crossings are accumulated.
-    // x in [-L/2,L/2]
-    if (x[tid] < -L / 2.0) {
+    // x in [-Lx/2,Lx/2]
+    if (x[tid] < -Lx / 2.0) {
       {{left_bc}}
       passx[tid] += -1;
-    } else if (x[tid] > L / 2.0) {
+    } else if (x[tid] > Lx / 2.0) {
       {{right_bc}}
       passx[tid] += 1;
     }
     // BC in y direction.
-    if (y[tid] > H / 2.0) {
+    if (y[tid] > Ly / 2.0) {
       {{ top_bc }}
       passy[tid] += 1;
-    } else if (y[tid] < -H / 2.0) {
+    } else if (y[tid] < -Ly / 2.0) {
       {{ bottom_bc }}
       passy[tid] += -1;
     }
@@ -174,23 +174,23 @@ class Box:
 
     def __init__(
         self,
-        L=1.0,
-        H=1.0,
+        Lx=1.0,
+        Ly=1.0,
         left_bc=Periodic(),
         right_bc=Periodic(),
         bottom_bc=NoFlux(),
         top_bc=NoFlux(),
     ):
-        self.L = L
-        self.H = H
+        self.Lx = Lx
+        self.Ly = Ly
         self.left_bc = left_bc
         self.right_bc = right_bc
         self.bottom_bc = bottom_bc
         self.top_bc = top_bc
 
     def __repr__(self):
-        return "Box(L={:.3f}, H={:.3f}, left_bc={}, right_bc={}, bottom_bc={},top_bc={})".format(
-            self.L, self.H, self.left_bc, self.right_bc, self.bottom_bc, self.top_bc
+        return "Box(Lx={:.3f}, Ly={:.3f}, left_bc={}, right_bc={}, bottom_bc={},top_bc={})".format(
+            self.Lx, self.Ly, self.left_bc, self.right_bc, self.bottom_bc, self.top_bc
         )
 
 
@@ -198,19 +198,21 @@ class Configuration:
     def __init__(
         self,
         rtp=core.RTP(),
-        L=1.0,
-        H=1.0,
+        Lx=1.0,
+        Ly=1.0,
         left_bc=Periodic(),
         right_bc=Periodic(),
         bottom_bc=NoFlux(),
         top_bc=NoFlux(),
         uf=1.0,
         N=1000000,
+        dt=1e-4,
+        Nt=1000000,
     ):
         self.rtp = rtp
         self.box = Box(
-            L=L,
-            H=H,
+            Lx=Lx,
+            Ly=Ly,
             left_bc=left_bc,
             right_bc=right_bc,
             bottom_bc=bottom_bc,
@@ -242,33 +244,43 @@ class Configuration:
         self.tau = gpuarray.GPUArray(N, dtype=np.float64)
         # current time
         self.t = 0.0
+        # time step
+        self.dt = dt
+        # total time steps.
+        self.Nt = Nt
 
     @classmethod
-    def from_freespace(cls, rtp=core.RTP(), L=1.0, N=1000000):
+    def from_freespace(cls, rtp=core.RTP(), Lx=1.0, N=1000000, dt=1e-4, Nt=1000000):
         return cls(
             rtp=rtp,
-            L=L,
-            H=L,
+            Lx=Lx,
+            Ly=Lx,
             left_bc=Periodic(),
             right_bc=Periodic(),
             bottom_bc=Periodic(),
             top_bc=Periodic(),
             uf=0.0,
             N=N,
+            dt=dt,
+            Nt=Nt,
         )
 
     @classmethod
-    def from_Poiseuille(cls, rtp=core.RTP(), H=1.0, uf=1.0, N=1000000):
+    def from_Poiseuille(
+        cls, rtp=core.RTP(), Ly=1.0, uf=1.0, N=1000000, dt=1e-4, Nt=1000000
+    ):
         return cls(
             rtp=rtp,
-            L=H,
-            H=H,
+            Lx=Ly,
+            Ly=Ly,
             left_bc=Periodic(),
             right_bc=Periodic(),
             bottom_bc=NoFlux(),
             top_bc=NoFlux(),
             uf=uf,
             N=N,
+            dt=dt,
+            Nt=Nt,
         )
 
 
@@ -304,30 +316,30 @@ class Simulator:
             raise NotImplementedError()
 
         if isinstance(self.box.bottom_bc, NoFlux):
-            bottom_bc = "y[tid] = -H / 2.0;"
+            bottom_bc = "y[tid] = -Ly / 2.0;"
         elif isinstance(self.box.bottom_bc, Periodic):
-            bottom_bc = "y[tid] += H;"
+            bottom_bc = "y[tid] += Ly;"
         else:
             raise NotImplementedError()
 
         if isinstance(self.box.top_bc, NoFlux):
-            top_bc = "y[tid] = H / 2.0;"
+            top_bc = "y[tid] = Ly / 2.0;"
         elif isinstance(self.box.top_bc, Periodic):
-            top_bc = "y[tid] -= H;"
+            top_bc = "y[tid] -= Ly;"
         else:
             raise NotImplementedError()
 
         if isinstance(self.box.left_bc, NoFlux):
-            left_bc = "x[tid] = -L / 2.0;"
+            left_bc = "x[tid] = -Lx / 2.0;"
         elif isinstance(self.box.left_bc, Periodic):
-            left_bc = "x[tid] += L;"
+            left_bc = "x[tid] += Lx;"
         else:
             raise NotImplementedError()
 
         if isinstance(self.box.right_bc, NoFlux):
-            right_bc = "x[tid] = L / 2.0;"
+            right_bc = "x[tid] = Lx / 2.0;"
         elif isinstance(self.box.right_bc, Periodic):
-            right_bc = "x[tid] -= L;"
+            right_bc = "x[tid] -= Lx;"
         else:
             raise NotImplementedError()
 
@@ -397,8 +409,8 @@ class Simulator:
             cfg.x0,
             cfg.y0,
             cfg.theta0,
-            np.float64(self.box.L),
-            np.float64(self.box.H),
+            np.float64(self.box.Lx),
+            np.float64(self.box.Ly),
             np.int32(cfg.N),
         )
 
@@ -432,12 +444,12 @@ class Simulator:
 
         return None
 
-    def run(self, cfg, dt, Nt, callbacks=None):
+    def run(self, cfg, callbacks=None):
         """Run Langevin simulation"""
         if not self._isinitialized:
             self.initialize(cfg)
 
-        for i in range(Nt):
+        for i in range(cfg.Nt + 1):
             self.launch_kernel(
                 self.bdrtp,
                 cfg.x_old,
@@ -453,9 +465,9 @@ class Simulator:
                 cfg.tau,
                 np.float64(cfg.rtp.U0),
                 np.float64(cfg.uf),
-                np.float64(cfg.box.L),
-                np.float64(cfg.box.H),
-                np.float64(dt),
+                np.float64(cfg.box.Lx),
+                np.float64(cfg.box.Ly),
+                np.float64(cfg.dt),
                 np.int32(cfg.N),
             )
             if callbacks is not None:
@@ -468,7 +480,7 @@ class Simulator:
                 for callback in callbacks:
                     callback(i, cfg)
 
-            cfg.t += dt
+            cfg.t += cfg.dt
 
 
 # rtp = RTP()
