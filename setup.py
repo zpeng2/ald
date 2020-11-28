@@ -7,6 +7,7 @@ setup(
     url="https://github.com/zpeng2/ald",
     author="Zhiwei Peng",
     author_email="zhiweipeng1@gmail.com",
+    python_requires=">=3.4",
     install_requires=["pycuda", "numpy", "jinja2", "h5py"],
     license="MIT",
     packages=["ald", "ald.rtp", "ald.core"],
