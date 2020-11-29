@@ -6,7 +6,7 @@ import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
 import numpy as np
 
-from .particles import AbstractParticle, AbstractRTP
+from .particle import AbstractParticle, AbstractRTP
 
 
 # class AbstractDistribution:

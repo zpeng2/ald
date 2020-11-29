@@ -2,8 +2,7 @@ from abc import abstractmethod, ABC
 
 
 class AbstractParticle:
-    def __init__(self):
-        pass
+    pass
 
 
 class ABP(AbstractParticle):
