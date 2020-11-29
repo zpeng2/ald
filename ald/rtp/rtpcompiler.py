@@ -1,6 +1,6 @@
 from ald.core.compiler import AbstractCompiler
 from ald.core.particle import AbstractRTP, RTP, Pareto
-from ald.core.external_velocity import ExternalVelocity, EmptyVelocity, Poiseuille
+from ald.core.external_velocity import ExternalVelocity, ZeroVelocity, Poiseuille
 from ald.core.ic import Point, Uniform, InitialConfig
 from ald.core.boundary import AbstractDomain, Box
 from jinja2 import Template
@@ -70,7 +70,7 @@ class RTPCompiler(AbstractCompiler):
         self,
         particle=RTP(),
         domain=Box.from_freespace(),
-        flow=EmptyVelocity(),
+        flow=ZeroVelocity(),
         ic=InitialConfig(),
     ):
         super().__init__(particle=particle, domain=domain, flow=flow, ic=ic)

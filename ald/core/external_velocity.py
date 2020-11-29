@@ -16,7 +16,7 @@ class ExternalVelocity:
             raise TypeError("invalid argument type.")
 
 
-class EmptyVelocity(ExternalVelocity):
+class ZeroVelocity(ExternalVelocity):
     """No external velocities."""
 
     def __init__(self):

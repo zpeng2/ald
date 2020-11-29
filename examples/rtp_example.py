@@ -2,7 +2,7 @@ import ald
 import numpy as np
 
 particle = ald.RTP()
-flow = ald.Poiseuille()
+flow = ald.ZeroVelocity()
 domain = ald.Box.from_channel()
 
 ic = ald.InitialConfig(
