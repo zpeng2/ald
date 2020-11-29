@@ -89,8 +89,6 @@ update_rtp(double *__restrict__ xold,       // old position in x
        double *__restrict__ tauR, // reorientation time for each active particle
        double *__restrict__ tau,  // time since last reorientation.
        double U0,                 // ABP swim speed
-       double Lx,    // simulation box length in x
-       double Ly,    // channel width, also simulation box size in y
        double dt,   // time step
        int N)
 

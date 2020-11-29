@@ -135,8 +135,6 @@ class Simulator(AbstractSimulator):
             cfg.tauR,
             cfg.tau,
             np.float64(cfg.particle.U0),
-            np.float64(cfg.box.Lx),
-            np.float64(cfg.box.Ly),
             np.float64(cfg.dt),
             np.int32(cfg.N),
         )

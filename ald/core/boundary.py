@@ -24,18 +24,18 @@ class AbstractBox:
 rectangle_box_bc_code = Template(
     """
     // BC in x direction.
-    if (x[tid] < -Lx / 2.0) {
+    if (x[tid] < -{{Lx}} / 2.0) {
       {{left_bc}}
       passx[tid] += -1;
-    } else if (x[tid] > Lx / 2.0) {
+    } else if (x[tid] > {{Lx}} / 2.0) {
       {{right_bc}}
       passx[tid] += 1;
     }
     // BC in y direction.
-    if (y[tid] > Ly / 2.0) {
+    if (y[tid] > {{Ly}} / 2.0) {
       {{ top_bc }}
       passy[tid] += 1;
-    } else if (y[tid] < -Ly / 2.0) {
+    } else if (y[tid] < -{{Ly}} / 2.0) {
       {{ bottom_bc }}
       passy[tid] += -1;
     }"""
@@ -129,5 +129,10 @@ class Box(AbstractBox):
             raise NotImplementedError()
         # source code for boundary condition in a rectangular domain.
         self.bc = rectangle_box_bc_code.render(
-            left_bc=left_bc, right_bc=right_bc, bottom_bc=bottom_bc, top_bc=top_bc
+            Lx=self.Lx,
+            Ly=self.Ly,
+            left_bc=left_bc,
+            right_bc=right_bc,
+            bottom_bc=bottom_bc,
+            top_bc=top_bc,
         )
