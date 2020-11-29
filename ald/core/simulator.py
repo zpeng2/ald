@@ -95,8 +95,6 @@ class Simulator(AbstractSimulator):
             cfg.x0,
             cfg.y0,
             cfg.theta0,
-            np.float64(self.domain.Lx),
-            np.float64(self.domain.Ly),
             np.int32(cfg.N),
         )
 

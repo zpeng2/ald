@@ -30,7 +30,6 @@ bd_rtp(double *__restrict__ x,          // position x
       // reset time since last tumble to zero.
       tau[tid] = 0.0;
       // after tumbling, need to draw a new tumbling time.
-      //{{runtimefun}}(&state[tid], tauavg, alpha);
       tauR[tid] = {{runtime}};
     }
     // next update the position

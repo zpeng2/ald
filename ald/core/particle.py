@@ -39,6 +39,14 @@ class RTP(AbstractRTP):
         return "RTP(U0 = {:.3f}, tauR= {:.3f})".format(self.U0, self.tauR)
 
 
+class ExponentialRTP(AbstractRTP):
+    def __init__(self, u0=1.0, tauR=1.0):
+        """tauR is the mean run time. PDF is lambda *exp(-lambda*x)
+        The mean is 1/lambda = tauR.
+        """
+        pass
+
+
 class Pareto(AbstractRTP):
     def __init__(self, U0=1.0, tauR=1.0, alpha=1.2):
         super().__init__(U0=U0, tauR=tauR)
