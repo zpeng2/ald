@@ -2,7 +2,7 @@ from ald.core import AbstractCompiler
 from ald.core import AbstractRTP, RTP, Pareto
 from ald.core import ExternalVelocity, EmptyVelocity, Poiseuille
 from ald.core import Point, Uniform, InitialConfig
-from ald.core import AbstractBox, Box
+from ald.core import AbstractDomain, Box
 from jinja2 import Template
 import os
 import pycuda.compiler as compiler
@@ -69,11 +69,11 @@ class RTPCompiler(AbstractCompiler):
     def __init__(
         self,
         particle=RTP(),
-        box=Box.from_freespace(),
+        domain=Box.from_freespace(),
         flow=EmptyVelocity(),
         ic=InitialConfig(),
     ):
-        super().__init__(particle=particle, box=box, flow=flow, ic=ic)
+        super().__init__(particle=particle, domain=domain, flow=flow, ic=ic)
         # render rtp kernel template.
         self._render_rtp_kernel()
         # compile
@@ -86,7 +86,7 @@ class RTPCompiler(AbstractCompiler):
             ux=self.flow.ux,
             uy=self.flow.uy,
             omega=self.flow.omega,
-            bc=self.box.bc,
+            bc=self.domain.bc,
         )
 
     @property

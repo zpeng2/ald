@@ -75,7 +75,7 @@ class MeanVariance(Callback):
             # get the boundary crossing array.
             passx = getattr(cfg, "pass" + self.attr)
             # do unwrap
-            L = getattr(cfg.box, "L" + self.attr)
+            L = getattr(cfg.domain, "L" + self.attr)
             # need the relative to the initial positions
             x -= x0
             x += passx * L

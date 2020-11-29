@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from ald.core.ic import InitialConfig
 from ald.core.particle import AbstractParticle, AbstractRTP, Pareto, RTP
 from ald.core.external_velocity import ExternalVelocity, EmptyVelocity, Poiseuille
-from ald.core.boundary import AbstractBox, Box
+from ald.core.boundary import AbstractDomain, Box
 import pycuda.autoinit
 import pycuda.curandom
 import pycuda.driver as cuda
@@ -66,18 +66,18 @@ class AbstractCompiler(ABC):
     def __init__(
         self,
         particle=RTP(),
-        box=Box.from_freespace(),
+        domain=Box.from_freespace(),
         flow=EmptyVelocity(),
         ic=InitialConfig(),
     ):
         if not isinstance(particle, AbstractParticle):
             raise TypeError()
-        if not isinstance(box, AbstractBox):
+        if not isinstance(domain, AbstractDomain):
             raise TypeError()
         if not isinstance(flow, ExternalVelocity):
             raise TypeError()
         self.particle = particle
-        self.box = box
+        self.domain = domain
         self.flow = flow
         self.ic = ic
         # base cuda code that is used.
@@ -120,7 +120,7 @@ class AbstractCompiler(ABC):
 #     ):
 #         if not isinstance(particle, AbstractRTP):
 #             raise TypeError()
-#         if not isinstance(box, AbstractBox):
+#         if not isinstance(box, AbstractDomain):
 #             raise TypeError()
 #         if not isinstance(flow, ExternalVelocity):
 #             raise TypeError()

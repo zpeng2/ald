@@ -15,7 +15,7 @@ class Periodic(AbstractBC):
         return "Periodic()"
 
 
-class AbstractBox:
+class AbstractDomain:
     """Abstract Simulation box"""
 
     pass
@@ -42,7 +42,7 @@ rectangle_box_bc_code = Template(
 )
 
 
-class Box(AbstractBox):
+class Box(AbstractDomain):
     """Square simulation domain."""
 
     def __init__(

@@ -1,7 +1,6 @@
 from abc import abstractmethod, ABC
 import pycuda.gpuarray as gpuarray
 import pycuda.curandom
-import pycuda.compiler as compiler
 import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
 import numpy as np
@@ -9,25 +8,8 @@ import numpy as np
 from .particle import AbstractParticle, AbstractRTP
 
 
-# class AbstractDistribution:
-#     """Abstract class for describing a distribution."""
-
-#     pass
-# class PointDistribution(AbstractDistribution):
-#     def __init__(self, symbol, loc):
-#         #symbol is the variable and loc is the value.
-#         self.symbol = symbol
-
-# class AbstractIC(ABC):
-#     """Abstract class for describing initial conditions of the particle system."""
-
-#     @abstractmethod
-#     def gen_cuda_code(self, *args, **kwargs):
-#         pass
-
-
 class AbstractConfig:
-    def __init__(self, particle, box, N, dt, Nt):
+    def __init__(self, particle, domain, N, dt, Nt):
         # particle needs to be a subtype of AbatractParticle
         if not isinstance(particle, AbstractParticle):
             raise TypeError("{} is not a subclass of AbstractParticle".format(particle))
@@ -36,7 +18,7 @@ class AbstractConfig:
         # keep a copy of the particle object
         self.particle = particle
         # keep a copy of the domain object
-        self.box = box
+        self.domain = domain
         # keep the number of particles
         self.N = N
         # time step
@@ -64,8 +46,8 @@ class AbstractConfig:
 
 
 class Config(AbstractConfig):
-    def __init__(self, particle, box, N, dt, Nt):
-        super().__init__(particle, box, N, dt, Nt)
+    def __init__(self, particle, domain, N, dt, Nt):
+        super().__init__(particle, domain, N, dt, Nt)
         # additional configuration info specifically for RTPs.
         if isinstance(particle, AbstractRTP):
             # curandstate array.

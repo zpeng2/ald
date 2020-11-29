@@ -3,17 +3,17 @@ import numpy as np
 
 particle = ald.RTP()
 flow = ald.Poiseuille()
-box = ald.Box.from_channel()
+domain = ald.Box.from_channel()
 
 ic = ald.InitialConfig(
     x=ald.Point(0), y=ald.Uniform(-0.5, 0.5), theta=ald.Uniform(0, 2 * np.pi)
 )
 
 
-cfg = ald.Config(particle, box, N=204800, dt=1e-4, Nt=1000000)
+cfg = ald.Config(particle, domain, N=204800, dt=1e-4, Nt=1000000)
 
 
-compiler = ald.RTPCompiler(particle, box, flow, ic)
+compiler = ald.RTPCompiler(particle, domain, flow, ic)
 
 simulator = ald.Simulator(cfg, compiler)
 

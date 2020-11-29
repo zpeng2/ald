@@ -13,8 +13,8 @@ class AbstractSimulator(ABC):
             raise TypeError()
         if not isinstance(compiler, AbstractCompiler):
             raise TypeError()
-        # keep a copy of box and particle
-        self.box = cfg.box
+        # keep a copy of domain and particle
+        self.domain = cfg.domain
         self.particle = cfg.particle
 
         # keep a copy of compiler
@@ -95,8 +95,8 @@ class Simulator(AbstractSimulator):
             cfg.x0,
             cfg.y0,
             cfg.theta0,
-            np.float64(self.box.Lx),
-            np.float64(self.box.Ly),
+            np.float64(self.domain.Lx),
+            np.float64(self.domain.Ly),
             np.int32(cfg.N),
         )
 
