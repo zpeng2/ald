@@ -1,25 +1,59 @@
 from abc import abstractmethod, ABC
 from ald.core.compiler import AbstractCompiler
-from ald.core.configs import AbstractConfig
-from ald.core.particles import RTP, Pareto
+from ald.core.config import AbstractConfig
+from ald.core.particle import RTP, Pareto
 import numpy as np
 
 
 class AbstractSimulator(ABC):
     """Langevin simulation of particles in 2D (channel or freespace.)"""
 
-    def __init__(self, initialized=False):
-        self.isinitialized = initialized
+    def __init__(self, cfg, compiler, threadsPerBlock=None, nblocks=None):
+        if not isinstance(cfg, AbstractConfig):
+            raise TypeError()
+        if not isinstance(compiler, AbstractCompiler):
+            raise TypeError()
+        # keep a copy of box and particle
+        self.box = cfg.box
+        self.particle = cfg.particle
+
+        # keep a copy of compiler
+        self.compiler = compiler
+
+        # this is set after calling self.initialize
+        self.isinitialized = False
+
+        # cuda launch parameters
+        # cuda kernel launch parameter
+        if threadsPerBlock is None:
+            self.threadsPerBlock = 512
+        else:
+            self.threadsPerBlock = threadsPerBlock
+        if nblocks is None:
+            self.nblocks = cfg.N // self.threadsPerBlock + 1
+            if self.nblocks > 500:
+                self.nblocks = 500
+        else:
+            self.nblocks = nblocks
 
     @abstractmethod
-    def initialize(self, cfg, *args, **kwargs):
+    def initialize(self, *args, **kwargs):
         """Initialize the particle and simulation configurations."""
-        pass
+        self.isinitialized = True
 
     @abstractmethod
-    def update(self, cfg, *args, **kwargs):
+    def update(self, *args, **kwargs):
         """One step of the Langevin simulation"""
         pass
+
+    def launch_kernel(self, func, *args):
+        """Launch cuda kernel func"""
+        func(
+            *args,
+            block=(self.threadsPerBlock, 1, 1),
+            grid=(self.nblocks, 1),
+        )
+        return None
 
     def run(self, cfg, callbacks=None):
         """Run Langevin simulation"""
@@ -44,34 +78,11 @@ class AbstractSimulator(ABC):
 class Simulator(AbstractSimulator):
     """Langevin simulation of RTPs in 2D (channel or freespace.)"""
 
-    def __init__(self, cfg, compiler):
+    def __init__(self, cfg, compiler, threadsPerBlock=None, nblocks=None):
         # not initialized yet
-        super().__init__(False)
-        if not isinstance(cfg, AbstractConfig):
-            raise TypeError()
-        if not isinstance(compiler, AbstractCompiler):
-            raise TypeError()
-        # keep a copy of box and particle
-        self.box = cfg.box
-        self.particle = cfg.particle
-
-        # keep a copy of compiler
-        self.compiler = compiler
-        # cuda launch parameters
-        # cuda kernel launch parameter
-        self.threadsPerBlock = 512
-        self.nblocks = cfg.N // self.threadsPerBlock + 1
-        if self.nblocks > 500:
-            self.nblocks = 500
-
-    def launch_kernel(self, func, *args):
-        """Launch cuda kernel func"""
-        func(
-            *args,
-            block=(self.threadsPerBlock, 1, 1),
-            grid=(self.nblocks, 1),
+        super().__init__(
+            cfg, compiler, threadsPerBlock=threadsPerBlock, nblocks=nblocks
         )
-        return None
 
     def initialize(self, cfg):
         """Initialize the particle and simulation configurations."""
@@ -115,7 +126,7 @@ class Simulator(AbstractSimulator):
         else:
             raise NotImplementedError()
         # indicate that the system is initialized
-        self.isinitialized = True
+        super().initialize()
 
         return None
 
