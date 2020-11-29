@@ -1,8 +1,8 @@
-from ald.core import AbstractCompiler
-from ald.core import AbstractRTP, RTP, Pareto
-from ald.core import ExternalVelocity, EmptyVelocity, Poiseuille
-from ald.core import Point, Uniform, InitialConfig
-from ald.core import AbstractDomain, Box
+from ald.core.compiler import AbstractCompiler
+from ald.core.particle import AbstractRTP, RTP, Pareto
+from ald.core.external_velocity import ExternalVelocity, EmptyVelocity, Poiseuille
+from ald.core.ic import Point, Uniform, InitialConfig
+from ald.core.boundary import AbstractDomain, Box
 from jinja2 import Template
 import os
 import pycuda.compiler as compiler
