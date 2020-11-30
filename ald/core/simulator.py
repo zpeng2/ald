@@ -62,6 +62,8 @@ class AbstractSimulator(ABC):
 
         for i in range(cfg.Nt + 1):
             self.update(cfg)
+            cfg.t = cfg.dt * (i + 1)
+
             if callbacks is not None:
                 # accepts an iterable of callbacks.
                 if not hasattr(callbacks, "__iter__"):
@@ -71,8 +73,6 @@ class AbstractSimulator(ABC):
                 # run each callback function
                 for callback in callbacks:
                     callback(i, cfg)
-
-            cfg.t += cfg.dt
 
 
 class Simulator(AbstractSimulator):

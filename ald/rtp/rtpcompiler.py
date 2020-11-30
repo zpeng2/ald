@@ -1,3 +1,4 @@
+from typing_extensions import runtime
 from ald.core.compiler import AbstractCompiler
 from ald.core.particle import AbstractRTP, RTP, Pareto
 from ald.core.external_velocity import ExternalVelocity, ZeroVelocity, Poiseuille
@@ -11,6 +12,16 @@ import pycuda.compiler as compiler
 rtp_kernel_template = Template(
     """
 extern "C" {
+__global__ void draw_runtimes(double *tauR,
+    curandState *state,
+    const int N)
+{ // for loop allows more particles than threads.
+for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
+    tid += blockDim.x * gridDim.x) {
+    tauR[tid] = {{runtime}};
+    }
+}
+
 // evolution of RTPs in 2D.
 __global__ void
 update_rtp(double *__restrict__ xold,       // old position in x
@@ -96,6 +107,10 @@ class RTPCompiler(AbstractCompiler):
         # do not touch self.cuda_code_base.
         # get the base code
         cuda_code = self.cuda_code_base
+        # append runtime device function code
+        # not all particle type need a runtime_device_code.
+        if hasattr(self.particle, "runtime_device_code"):
+            cuda_code += self.particle.runtime_device_code
         # append bd_rtp.
         cuda_code += self.rtp_kernel_code
         # append initial condition kernel
@@ -109,4 +124,4 @@ class RTPCompiler(AbstractCompiler):
         self.update_rtp = module.get_function("update_rtp")
         self.initrand = module.get_function("initrand")
         self.init_config = module.get_function("init_config")
-        self.draw_pareto_runtimes = module.get_function("draw_pareto_runtimes")
+        self.draw_pareto_runtimes = module.get_function("draw_runtimes")

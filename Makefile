@@ -1,2 +1,2 @@
 install:
-	python3 -m pip install -e . --user
+	python3 -m pip install . --user

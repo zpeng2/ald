@@ -1,4 +1,4 @@
-from .particle import AbstractParticle, AbstractRTP, ABP, RTP, Pareto
+from .particle import AbstractParticle, AbstractRTP, ABP, RTP, Pareto, ExponentialRTP
 from .boundary import AbstractBC, NoFlux, Periodic, AbstractDomain, Box
 
 from .ic import AbstractIC, Point, Uniform, InitialConfig

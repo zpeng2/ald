@@ -15,7 +15,6 @@ import os
 cuda_code = """
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
-
 #define PI 3.141592653589793
 
 extern "C" {
@@ -29,33 +28,6 @@ __global__ void initrand(curandState *__restrict__ state, const int N) {
        tid += blockDim.x * gridDim.x) {
     curand_init(seed, tid, offset, &state[tid]);
   }
-}
-
-// generate Pareto run times.
-// https://en.wikipedia.org/wiki/Pareto_distribution#Random_sample_generation
-// taum is the minimum run time, alpha is the exponent
-__device__ double pareto_runtime(curandState *state, double tauR,
-                                 double alpha) {
-  // !! tauR is the mean runtime, which is taum*alpha/(alpha-1)
-  double taum = (alpha - 1.0) * tauR / alpha;
-  // curand_uniform_double is uniformly distributed in (0,1)
-  double U = curand_uniform_double(state);
-  return taum / pow(U, 1.0 / alpha);
-}
-
-// draw run times for each active particle
-__global__ void draw_pareto_runtimes(
-    double *tauR, curandState *state, const int N, const double tauavg,
-    const double alpha) { // for loop allows more particles than threads.
-  for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
-       tid += blockDim.x * gridDim.x) {
-    tauR[tid] = pareto_runtime(&state[tid], tauavg, alpha);
-  }
-}
-
-// dummy function for constant runtime RTPs.
-__device__ double constant_runtime(curandState *state, double tauR, ...) {
-  return tauR;
 }
 
 } // extern C
