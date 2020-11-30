@@ -111,8 +111,7 @@ class RTPCompiler(AbstractCompiler):
         cuda_code = self.cuda_code_base
         # append runtime device function code
         # not all particle type need a runtime_device_code.
-        if hasattr(self.particle, "runtime_device_code"):
-            cuda_code += self.particle.runtime_device_code
+        cuda_code += self.particle.runtime_device_code
         # append bd_rtp.
         cuda_code += self.rtp_kernel_code
         # append initial condition kernel

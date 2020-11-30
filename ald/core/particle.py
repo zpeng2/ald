@@ -22,7 +22,7 @@ class ABP(AbstractParticle):
 
 
 class AbstractRTP(AbstractParticle):
-    def __init__(self, U0=1.0, tauR=1.0, runtime_code=None):
+    def __init__(self, U0=1.0, tauR=1.0, runtime_code="None"):
         # tauR is the mean runtime.
         self.tauR = tauR
         self.U0 = U0
@@ -35,6 +35,8 @@ class RTP(AbstractRTP):
     def __init__(self, U0=1.0, tauR=1.0):
         runtime_code = "{}".format(tauR)
         super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code)
+        # not needed for RTP, just use \n.
+        self.runtime_device_code = "\n"
 
     def __repr__(self):
         return "RTP(U0 = {:.3f}, tauR= {:.3f})".format(self.U0, self.tauR)

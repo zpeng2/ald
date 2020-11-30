@@ -1,7 +1,7 @@
 import ald
 import numpy as np
 
-particle = ald.ExponentialRTP(U0=1, tauR=1.0)
+particle = ald.RTP(U0=1, tauR=1.0)
 flow = ald.ZeroVelocity()
 domain = ald.Box.from_freespace(Lx=1.0, Ly=1.0)
 
