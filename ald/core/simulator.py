@@ -111,18 +111,14 @@ class Simulator(AbstractSimulator):
         if isinstance(self.particle, RTP):
             # constant runtime.
             cfg.tauR.fill(self.particle.tauR)
-        elif isinstance(self.particle, Pareto):
+        else:
             # Pareto distributed runtimes.
             self.launch_kernel(
-                self.compiler.draw_pareto_runtimes,
+                self.compiler.draw_runtimes,
                 cfg.tauR,
                 cfg.state,
                 np.int32(cfg.N),
-                np.float64(self.particle.tauR),
-                np.float64(self.particle.alpha),
             )
-        else:
-            raise NotImplementedError()
         # indicate that the system is initialized
         super().initialize()
 

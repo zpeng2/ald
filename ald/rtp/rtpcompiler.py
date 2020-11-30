@@ -84,6 +84,8 @@ class RTPCompiler(AbstractCompiler):
         flow=ZeroVelocity(),
         ic=InitialConfig(),
     ):
+        if not isinstance(particle, AbstractRTP):
+            raise TypeError()
         super().__init__(particle=particle, domain=domain, flow=flow, ic=ic)
         # render rtp kernel template.
         self._render_rtp_kernel()
@@ -124,4 +126,4 @@ class RTPCompiler(AbstractCompiler):
         self.update_rtp = module.get_function("update_rtp")
         self.initrand = module.get_function("initrand")
         self.init_config = module.get_function("init_config")
-        self.draw_pareto_runtimes = module.get_function("draw_runtimes")
+        self.draw_runtimes = module.get_function("draw_runtimes")
