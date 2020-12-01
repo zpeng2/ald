@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from ald.core.config import AbstractConfig
 from ald.core.ic import InitialConfig
 from ald.core.particle import AbstractParticle, AbstractRTP, Pareto, RTP
 from ald.core.external_velocity import ExternalVelocity, ZeroVelocity, Poiseuille
@@ -30,6 +31,11 @@ __global__ void initrand(curandState *__restrict__ state, const int N) {
   }
 }
 
+__device__ double uniform_rand(curandState *state, double a,
+                                double b) {
+return a+(b-a)*curand_uniform_double(state);
+}
+
 } // extern C
 """
 
@@ -37,19 +43,16 @@ __global__ void initrand(curandState *__restrict__ state, const int N) {
 class AbstractCompiler(ABC):
     def __init__(
         self,
-        particle=RTP(),
-        domain=Box.from_freespace(),
+        cfg,
         flow=ZeroVelocity(),
         ic=InitialConfig(),
     ):
-        if not isinstance(particle, AbstractParticle):
-            raise TypeError()
-        if not isinstance(domain, AbstractDomain):
+        if not isinstance(cfg, AbstractConfig):
             raise TypeError()
         if not isinstance(flow, ExternalVelocity):
             raise TypeError()
-        self.particle = particle
-        self.domain = domain
+        self.particle = cfg.particle
+        self.domain = cfg.domain
         self.flow = flow
         self.ic = ic
         # base cuda code that is used.

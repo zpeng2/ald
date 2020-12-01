@@ -13,9 +13,9 @@ ic = ald.InitialConfig(
 cfg = ald.Config(particle, domain, N=204800, dt=1e-4, Nt=2000000)
 
 
-compiler = ald.RTPCompiler(particle, domain, flow, ic)
+compiler = ald.RTPCompiler(cfg, flow, ic)
 
-simulator = ald.Simulator(cfg, compiler)
+simulator = ald.RTPSimulator(cfg, compiler)
 
 
 # range to compute stats on configuration and print time.

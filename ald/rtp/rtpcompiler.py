@@ -79,14 +79,13 @@ class RTPCompiler(AbstractCompiler):
 
     def __init__(
         self,
-        particle=RTP(),
-        domain=Box.from_freespace(),
+        cfg,
         flow=ZeroVelocity(),
         ic=InitialConfig(),
     ):
-        if not isinstance(particle, AbstractRTP):
+        if not isinstance(cfg.particle, AbstractRTP):
             raise TypeError()
-        super().__init__(particle=particle, domain=domain, flow=flow, ic=ic)
+        super().__init__(cfg, flow=flow, ic=ic)
         # render rtp kernel template.
         self._render_rtp_kernel()
         # compile

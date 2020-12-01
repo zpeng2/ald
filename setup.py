@@ -10,6 +10,6 @@ setup(
     python_requires=">=3.4",
     install_requires=["pycuda", "numpy", "jinja2", "h5py"],
     license="MIT",
-    packages=["ald", "ald.rtp", "ald.core"],
+    packages=["ald", "ald.rtp", "ald.core", "ald.abp"],
     zip_safe=False,
 )

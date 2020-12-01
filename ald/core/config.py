@@ -41,6 +41,11 @@ class AbstractConfig:
         # total number of boundary crossings in x and y
         self.passx = gpuarray.GPUArray(N, dtype=np.int32)
         self.passy = gpuarray.GPUArray(N, dtype=np.int32)
+        # curandstate array.
+        sizeof_state = pycuda.characterize.sizeof(
+            "curandStateXORWOW", "#include <curand_kernel.h>"
+        )
+        self.state = cuda.mem_alloc(N * sizeof_state)
         # current time
         self.t = 0.0
 
@@ -50,11 +55,6 @@ class Config(AbstractConfig):
         super().__init__(particle, domain, N, dt, Nt)
         # additional configuration info specifically for RTPs.
         if isinstance(particle, AbstractRTP):
-            # curandstate array.
-            sizeof_state = pycuda.characterize.sizeof(
-                "curandStateXORWOW", "#include <curand_kernel.h>"
-            )
-            self.state = cuda.mem_alloc(N * sizeof_state)
             # array for the current runtime drawed from its distribution
             self.tauR = gpuarray.GPUArray(N, dtype=np.float64)
             # time since last tumble.

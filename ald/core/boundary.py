@@ -24,18 +24,18 @@ class AbstractDomain:
 rectangle_box_bc_code = Template(
     """
     // BC in x direction.
-    if (x[tid] < -{{Lx}} / 2.0) {
+    if (x[tid] < {{left}}) {
       {{left_bc}}
       passx[tid] += -1;
-    } else if (x[tid] > {{Lx}} / 2.0) {
+    } else if (x[tid] > {{right}}) {
       {{right_bc}}
       passx[tid] += 1;
     }
     // BC in y direction.
-    if (y[tid] > {{Ly}} / 2.0) {
+    if (y[tid] > {{top}}) {
       {{ top_bc }}
       passy[tid] += 1;
-    } else if (y[tid] < -{{Ly}} / 2.0) {
+    } else if (y[tid] < {{bottom}}) {
       {{ bottom_bc }}
       passy[tid] += -1;
     }"""
@@ -47,19 +47,29 @@ class Box(AbstractDomain):
 
     def __init__(
         self,
-        Lx=1.0,
-        Ly=1.0,
-        left=Periodic(),
-        right=Periodic(),
-        bottom=NoFlux(),
-        top=NoFlux(),
+        left=-0.5,
+        right=0.5,
+        bottom=-0.5,
+        top=0.5,
+        leftbc=Periodic(),
+        rightbc=Periodic(),
+        bottombc=NoFlux(),
+        topbc=NoFlux(),
     ):
-        self.Lx = Lx
-        self.Ly = Ly
+        if right < left:
+            raise ValueError("right <left")
+        if top < bottom:
+            raise ValueError("top < bottom")
+        self.Lx = right - left
+        self.Ly = top - bottom
         self.left = left
         self.right = right
         self.bottom = bottom
         self.top = top
+        self.leftbc = leftbc
+        self.rightbc = rightbc
+        self.bottombc = bottombc
+        self.topbc = topbc
         # bc is set by calling _generate_bc_cuda
         self.bc = None
         # generate cuda code strings
@@ -70,29 +80,40 @@ class Box(AbstractDomain):
     def from_freespace(cls, Lx=1.0, Ly=1.0):
         """Free space, periodic conditions."""
         return cls(
-            Lx=Lx,
-            Ly=Ly,
-            left=Periodic(),
-            right=Periodic(),
-            bottom=Periodic(),
-            top=Periodic(),
+            left=-Lx / 2,
+            right=Lx / 2,
+            bottom=-Ly / 2,
+            top=Ly / 2,
+            leftbc=Periodic(),
+            rightbc=Periodic(),
+            bottombc=Periodic(),
+            topbc=Periodic(),
         )
 
     @classmethod
     def from_channel(cls, Ly=1.0):
         """Planar channel geometry."""
         return cls(
-            Lx=Ly,
-            Ly=Ly,
-            left=Periodic(),
-            right=Periodic(),
-            bottom=NoFlux(),
-            top=NoFlux(),
+            left=-Ly / 2,
+            right=Ly / 2,
+            bottom=-Ly / 2,
+            top=Ly / 2,
+            leftbc=Periodic(),
+            rightbc=Periodic(),
+            bottombc=NoFlux(),
+            topbc=NoFlux(),
         )
 
     def __repr__(self):
-        return "Box(Lx={:.3f}, Ly={:.3f}, left={}, right={}, bottom={},top={})".format(
-            self.Lx, self.Ly, self.left, self.right, self.bottom, self.top
+        return "Box([{}, {}]x[{},{}], left={}, right={}, bottom={},top={})".format(
+            self.left,
+            self.right,
+            self.bottom,
+            self.top,
+            self.leftbc,
+            self.rightbc,
+            self.bottombc,
+            self.topbc,
         )
 
     def _generate_bc_cuda(self):
@@ -100,37 +121,39 @@ class Box(AbstractDomain):
         # TODO: make a single BC code block, this makes the cuda kernel more general
         # because one can have abps inside a cavity, in which case the current
         # implementation does not work.
-        if isinstance(self.left, NoFlux):
-            left_bc = "x[tid] = -{} / 2.0;".format(self.Lx)
-        elif isinstance(self.left, Periodic):
+        if isinstance(self.leftbc, NoFlux):
+            left_bc = "x[tid] = {};".format(self.left)
+        elif isinstance(self.leftbc, Periodic):
             left_bc = "x[tid] += {};".format(self.Lx)
         else:
             raise NotImplementedError()
 
-        if isinstance(self.right, NoFlux):
-            right_bc = "x[tid] = {} / 2.0;".format(self.Lx)
-        elif isinstance(self.right, Periodic):
+        if isinstance(self.rightbc, NoFlux):
+            right_bc = "x[tid] = {};".format(self.right)
+        elif isinstance(self.rightbc, Periodic):
             right_bc = "x[tid] -= {};".format(self.Lx)
         else:
             raise NotImplementedError()
 
-        if isinstance(self.bottom, NoFlux):
-            bottom_bc = "y[tid] = -{} / 2.0;".format(self.Ly)
-        elif isinstance(self.bottom, Periodic):
+        if isinstance(self.bottombc, NoFlux):
+            bottom_bc = "y[tid] = {};".format(self.bottom)
+        elif isinstance(self.bottombc, Periodic):
             bottom_bc = "y[tid] += {};".format(self.Ly)
         else:
             raise NotImplementedError()
 
-        if isinstance(self.top, NoFlux):
-            top_bc = "y[tid] = {} / 2.0;".format(self.Ly)
-        elif isinstance(self.top, Periodic):
+        if isinstance(self.topbc, NoFlux):
+            top_bc = "y[tid] = {};".format(self.top)
+        elif isinstance(self.topbc, Periodic):
             top_bc = "y[tid] -= {};".format(self.Ly)
         else:
             raise NotImplementedError()
         # source code for boundary condition in a rectangular domain.
         self.bc = rectangle_box_bc_code.render(
-            Lx=self.Lx,
-            Ly=self.Ly,
+            left=self.left,
+            right=self.right,
+            bottom=self.bottom,
+            top=self.top,
             left_bc=left_bc,
             right_bc=right_bc,
             bottom_bc=bottom_bc,

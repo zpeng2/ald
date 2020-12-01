@@ -9,6 +9,6 @@ from .external_velocity import ExternalVelocity, ZeroVelocity, Poiseuille
 
 from .compiler import AbstractCompiler
 
-from .simulator import AbstractSimulator, Simulator
+from .simulator import AbstractSimulator
 
 from .callback import InRange, Callback, MeanVariance, PrintCallback, ETA
