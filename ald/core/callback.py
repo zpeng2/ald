@@ -196,12 +196,23 @@ class ETA(Callback):
 
 
 class ConfigSaver(Callback):
-    def __init__(self, runner, file, variables=["x", "y", "theta"]):
+    def __init__(
+        self, runner, file, variables=["x", "y", "theta"], unwrap=[False, False, False]
+    ):
         super().__init__(runner)
         self.variables = variables
         if not isinstance(file, str):
             raise TypeError("invalid filename")
         self.file = file
+        # length of vcariables and unwrap should be the same
+        if len(variables) != len(unwrap):
+            raise ValueError("lengths of variables and unwrap do not match")
+        # theta cannot unwrap
+        if "theta" in variables:
+            i = variables.index("theta")
+            if unwrap[i]:
+                raise ValueError("cannot unwrap theta")
+        self.unwrap = unwrap
         # keep a frame counter
         self.counter = 0
         # if file exists, error
@@ -212,8 +223,11 @@ class ConfigSaver(Callback):
             with open(self.file, "w") as f:
                 pass
 
-    def get_config(self, variable, cfg):
+    def get_config(self, variable, cfg, unwrap):
+        # need to unwrap if requested
         variable_gpu = getattr(cfg, variable)
+        if unwrap:
+            variable_gpu += getattr(cfg, "pass" + variable)
         return variable_gpu.get()
 
     def __call__(self, i, cfg):
@@ -223,9 +237,9 @@ class ConfigSaver(Callback):
                 # keep track of time
                 f[path + "t"] = cfg.t
                 # save configuration
-                for variable in self.variables:
+                for variable, unwrap in zip(self.variables, self.unwrap):
                     configpath = path + "{}".format(variable)
-                    f[configpath] = self.get_config(variable, cfg)
+                    f[configpath] = self.get_config(variable, cfg, unwrap)
 
             # need to update counter
             self.counter += 1

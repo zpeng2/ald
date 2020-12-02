@@ -27,7 +27,7 @@ ic = ald.InitialConfig(
 
 
 # number of particles
-N = 204800
+N = 300000
 # time step
 dt = 1e-4
 # total steps
@@ -43,11 +43,15 @@ simulator = ald.RTPSimulator(cfg, compiler)
 
 
 # setup callbacks.
-file = "U{}tauR{}.h5".format(U0, tauR)
+file = "pareto_U{}tauR{}.h5".format(U0, tauR)
 # save configuraton.
 # callback controller
-runner = ald.RangedRunner(start=0, stop=cfg.Nt, freq=10000)
-configsaver = ald.ConfigSaver(runner, file, variables=["x", "y", "theta"])
+configrunner = ald.RangedRunner(start=0, stop=cfg.Nt, freq=10000)
+# x is periodic, unwrap to save the absolute position
+configsaver = ald.ConfigSaver(
+    configrunner, file, variables=["x", "y", "theta"], unwrap=[True, False, False]
+)
+
 # print out ETA
 eta = ald.ETA(ald.RangedRunner(start=0, stop=cfg.Nt, freq=20000))
 
