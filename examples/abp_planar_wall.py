@@ -1,8 +1,11 @@
 import ald
 import numpy as np
 
-particle = ald.ABP()
+
+particle = ald.ABP(U0=1.0, DT=1.0, tauR=1.0)
+
 flow = ald.ZeroVelocity()
+
 domain = ald.Box(left=0, right=1, bottom=-0.5, top=0.5)
 
 ic = ald.InitialConfig(
@@ -22,10 +25,11 @@ compiler = ald.ABPCompiler(kernel, cfg, flow, ic)
 simulator = ald.ABPSimulator(cfg, compiler)
 
 
-# range to compute stats on configuration and print time.
-stat_range = ald.InRange(start=0, stop=cfg.Nt, freq=10000)
+runner = ald.RangedRunner(start=0, stop=cfg.Nt, freq=10000)
 # setup callbacks.
+file = "abp.h5"
+configsaver = ald.ConfigSaver(runner, file, variables=["x", "y", "theta"])
+callbacks = [ald.ETA(runner), configsaver]
 
-callbacks = [ald.ETA(stat_range)]
 
 simulator.run(cfg, callbacks=callbacks)

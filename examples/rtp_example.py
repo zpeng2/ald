@@ -19,11 +19,11 @@ simulator = ald.RTPSimulator(cfg, compiler)
 
 
 # range to compute stats on configuration and print time.
-stat_range = ald.InRange(start=0, stop=cfg.Nt, freq=10000)
+runner = ald.RangedRunner(start=0, stop=cfg.Nt, freq=10000)
 # setup callbacks.
-x = ald.MeanVariance(stat_range, "x", unwrap=True)
-y = ald.MeanVariance(stat_range, "y", unwrap=True)
-# y = ald.MeanVariance(stat_range, "y", unwrap=True)
-callbacks = [x, y, ald.ETA(stat_range)]
+x = ald.MeanVariance(runner, "x", unwrap=True)
+y = ald.MeanVariance(runner, "y", unwrap=True)
+# y = ald.MeanVariance(runner, "y", unwrap=True)
+callbacks = [x, y, ald.ETA(runner)]
 
 simulator.run(cfg, callbacks=callbacks)

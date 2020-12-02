@@ -1,12 +1,23 @@
+from numpy.lib.arraysetops import isin
 import pycuda.gpuarray as gpuarray
 from abc import abstractmethod, ABC
 import numpy as np
 import time
 import datetime
+import h5py
+import os
 
 
-class InRange:
-    """Validate whether an integer is in a python range."""
+class CallbackRunner(ABC):
+    """Decide whether to run a callback."""
+
+    @abstractmethod
+    def iscomputing(self, i):
+        pass
+
+
+class RangedRunner(CallbackRunner):
+    """Run callback if an index is in a range."""
 
     def __init__(self, start, stop, freq):
         # python range is end-exclusive.
@@ -27,8 +38,7 @@ class InRange:
             raise ValueError("start={} is negative".format(start))
         return cls(start, stop, freq)
 
-    def __call__(self, i):
-        """Check if a given integer is included in _range."""
+    def iscomputing(self, i):
         if i in self._range:
             return True
         else:
@@ -41,6 +51,11 @@ class InRange:
 class Callback(ABC):
     """Callback that computes/stores information as the simulation evolves."""
 
+    def __init__(self, runner):
+        if not isinstance(runner, CallbackRunner):
+            raise TypeError()
+        self.runner = runner
+
     @abstractmethod
     def __call__(self, *args, **kwargs):
         pass
@@ -49,16 +64,14 @@ class Callback(ABC):
 class MeanVariance(Callback):
     """Compute mean and variance of a GPUArray."""
 
-    def __init__(self, inrange, attr, unwrap=False):
-        if not isinstance(inrange, InRange):
-            raise TypeError("wrong type {}".format(type(inrange)))
-        self.iscomputing = inrange
+    def __init__(self, runner, attr, unwrap=False):
+        super().__init__(runner)
         # which cfg attribute to do statistics.
         self.attr = attr
         # unwrap periodic to get absolute positions.
         self.unwrap = unwrap
         # instantiate arrays to store mean and variance
-        self.m = np.zeros(len(inrange))
+        self.m = np.zeros(len(self.runner))
         self.v = np.zeros_like(self.m)
         # keep track of time
         self.t = np.zeros_like(self.m)
@@ -91,7 +104,7 @@ class MeanVariance(Callback):
         return mean_x, variance_x
 
     def __call__(self, i, cfg):
-        if self.iscomputing(i):
+        if self.runner.iscomputing(i):
             m, v = self.mean_variance(cfg)
             self.m[self.idx] = m
             self.v[self.idx] = v
@@ -101,28 +114,24 @@ class MeanVariance(Callback):
 
 
 class PrintCallback(Callback):
-    def __init__(self, inrange):
-        if not isinstance(inrange, InRange):
-            raise TypeError("wrong type {}".format(type(inrange)))
-        self.iscomputing = inrange
+    def __init__(self, runner):
+        super().__init__(runner)
 
     def __call__(self, i, cfg):
-        if self.iscomputing(i):
+        if self.runner.iscomputing(i):
             print("t = {:.3f}".format(cfg.t))
 
 
 class ETA(Callback):
-    def __init__(self, inrange):
-        if not isinstance(inrange, InRange):
-            raise TypeError("wrong type {}".format(type(inrange)))
-        self.iscomputing = inrange
+    def __init__(self, runner):
+        super().__init__(runner)
 
     def __call__(self, i, cfg):
         """Printout TPS and ETA."""
         if i == 0:
             self.start = time.time()
         else:
-            if self.iscomputing(i):
+            if self.runner.iscomputing(i):
                 elapsed = time.time() - self.start
                 # timesteps per second
                 tps = int(i / elapsed)
@@ -134,3 +143,32 @@ class ETA(Callback):
                 eta_human = str(datetime.timedelta(seconds=int(eta)))
                 # print output
                 print("TPS:{0}, ETA:{1}".format(tps, eta_human))
+
+
+class ConfigSaver(Callback):
+    def __init__(self, runner, file, variables=["x", "y", "theta"]):
+        super().__init__(runner)
+        self.variables = variables
+        if not isinstance(file, str):
+            raise TypeError("invalid filename")
+        self.file = file
+        # keep a frame counter
+        self.counter = 0
+        # if file doesnt exist
+        if not os.path.exists(self.file):
+            # create file
+            with open(self.file, "w") as f:
+                pass
+
+    def get_config(self, variable, cfg):
+        variable_gpu = getattr(cfg, variable)
+        return variable_gpu.get()
+
+    def __call__(self, i, cfg):
+        if self.runner.iscomputing(i):
+            with h5py.File(self.file, "r+") as f:
+                for variable in self.variables:
+                    path = "config/{}/{}".format(self.counter, variable)
+                    f[path] = self.get_config(variable, cfg)
+                    # need to update counter
+                    self.counter += 1
