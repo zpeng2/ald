@@ -114,6 +114,14 @@ class DisplacementMeanVariance(Callback):
             self.idx += 1
         return None
 
+    def save2h5(self, file, group):
+        """Save m and t to file"""
+        # save
+        with h5py.File(file, "r+") as f:
+            f[os.path.join(group, "t")] = self.t
+            f[os.path.join(group, "m")] = self.m
+            f[os.path.join(group, "v")] = self.v
+
 
 class SimpleMean(Callback):
     """Compute simple mean"""
@@ -146,6 +154,13 @@ class SimpleMean(Callback):
                 self.t[self.idx] = cfg.t
             self.idx += 1
         return None
+
+    def save2h5(self, file, group):
+        """Save m and t to file"""
+        # save
+        with h5py.File(file, "r+") as f:
+            f[os.path.join(group, "t")] = self.t
+            f[os.path.join(group, "m")] = self.m
 
 
 class PrintCallback(Callback):
@@ -196,8 +211,6 @@ class ConfigSaver(Callback):
             # create file
             with open(self.file, "w") as f:
                 pass
-
-
 
     def get_config(self, variable, cfg):
         variable_gpu = getattr(cfg, variable)

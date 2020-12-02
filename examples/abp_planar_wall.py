@@ -35,7 +35,7 @@ simulator = ald.ABPSimulator(cfg, compiler)
 
 runner = ald.RangedRunner(start=Nt//2, stop=cfg.Nt, freq=10000)
 # setup callbacks.
-file = "abp.h5"
+file = "U{}DT{}DR{}.h5".format(U0, DT, particle.DR)
 configsaver = ald.ConfigSaver(runner, file, variables=["x"])
 eta = ald.ETA(ald.RangedRunner(start = 0, stop=cfg.Nt, freq=20000))
 force = ald.SimpleMean(runner, "dx", keep_time=True)
@@ -44,3 +44,7 @@ callbacks = [eta, configsaver, force]
 
 
 simulator.run(cfg, callbacks=callbacks)
+# save further data
+force.save2h5(file, "dx")
+# save other attributes
+cfg.save2h5(file)

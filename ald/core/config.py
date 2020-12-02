@@ -4,7 +4,7 @@ import pycuda.curandom
 import pycuda.driver as cuda
 import pycuda.gpuarray as gpuarray
 import numpy as np
-
+import h5py
 from ald.core.particle import AbstractParticle, AbstractRTP
 
 
@@ -49,6 +49,23 @@ class AbstractConfig:
         # current time
         self.t = 0.0
 
+    def save2h5(self, file):
+        """Save particle, domain simulation attributes to hdf5"""
+        with h5py.File(file, "r+") as f:
+            # write attributes only, not data arrays.
+            # particle attributes.
+            # save only scalar and numeric attributes.
+            for attr, value in vars(self.particle).items():
+                if np.isscalar(value) and np.isreal(value):
+                    f.attrs[attr] = value
+            # save domain info
+            for attr, value in vars(self.domain).items():
+                if np.isscalar(value) and np.isreal(value):
+                    f.attrs[attr] = value
+            # save simulation attributes
+            f.attrs["dt"] = self.dt
+            f.attrs["Nt"] = self.Nt
+            f.attrs["N"] = self.N
 
 class Config(AbstractConfig):
     def __init__(self, particle, domain, N, dt, Nt):
