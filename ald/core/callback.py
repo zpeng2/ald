@@ -61,13 +61,15 @@ class Callback(ABC):
         pass
 
 
-class MeanVariance(Callback):
+class DisplacementMeanVariance(Callback):
     """Compute mean and variance of a GPUArray."""
 
-    def __init__(self, runner, attr, unwrap=False):
+    def __init__(self, runner, variable, unwrap=False):
         super().__init__(runner)
         # which cfg attribute to do statistics.
-        self.attr = attr
+        if not variable in ["x", "y"]:
+            raise ValueError("invalid variable: {}".format(variable))
+        self.variable = variable
         # unwrap periodic to get absolute positions.
         self.unwrap = unwrap
         # instantiate arrays to store mean and variance
@@ -80,15 +82,15 @@ class MeanVariance(Callback):
 
     def mean_variance(self, cfg):
         # get data.
-        x = getattr(cfg, self.attr)
+        x = getattr(cfg, self.variable)
         # initial location
-        x0 = getattr(cfg, self.attr + "0")
+        x0 = getattr(cfg, self.variable + "0")
         # unwrap
         if self.unwrap:
             # get the boundary crossing array.
-            passx = getattr(cfg, "pass" + self.attr)
+            passx = getattr(cfg, "pass" + self.variable)
             # do unwrap
-            L = getattr(cfg.domain, "L" + self.attr)
+            L = getattr(cfg.domain, "L" + self.variable)
             # need the relative to the initial positions
             x -= x0
             x += passx * L
@@ -109,6 +111,39 @@ class MeanVariance(Callback):
             self.m[self.idx] = m
             self.v[self.idx] = v
             self.t[self.idx] = cfg.t
+            self.idx += 1
+        return None
+
+
+class SimpleMean(Callback):
+    """Compute simple mean"""
+
+    def __init__(self, runner, variable, keep_time=False):
+        super().__init__(runner)
+        self.variable = variable
+        # instantiate arrays to store mean and variance
+        self.m = np.zeros(len(self.runner))
+        # keep track of time
+        self.keep_time = keep_time
+        if keep_time:
+            self.t = np.zeros_like(self.m)
+        # index used to store values
+        self.idx = 0
+
+    def compute_mean(self, cfg):
+        # get data.
+        x = getattr(cfg, self.variable)
+        N = len(x)
+        mean_x = gpuarray.sum(x) / N
+        # copy to cpu and flatten
+        mean_x = float(mean_x.get())
+        return mean_x
+
+    def __call__(self, i, cfg):
+        if self.runner.iscomputing(i):
+            self.m[self.idx] = self.compute_mean(cfg)
+            if self.keep_time:
+                self.t[self.idx] = cfg.t
             self.idx += 1
         return None
 
@@ -154,11 +189,15 @@ class ConfigSaver(Callback):
         self.file = file
         # keep a frame counter
         self.counter = 0
-        # if file doesnt exist
-        if not os.path.exists(self.file):
+        # if file exists, error
+        if os.path.exists(self.file):
+            raise ValueError("file: {} exists.".format(self.file))
+        else:
             # create file
             with open(self.file, "w") as f:
                 pass
+
+
 
     def get_config(self, variable, cfg):
         variable_gpu = getattr(cfg, variable)
@@ -167,8 +206,13 @@ class ConfigSaver(Callback):
     def __call__(self, i, cfg):
         if self.runner.iscomputing(i):
             with h5py.File(self.file, "r+") as f:
+                path = "config/{}/".format(self.counter)
+                # keep track of time
+                f[path + "t"] = cfg.t
+                # save configuration
                 for variable in self.variables:
-                    path = "config/{}/{}".format(self.counter, variable)
-                    f[path] = self.get_config(variable, cfg)
-                    # need to update counter
-                    self.counter += 1
+                    configpath = path + "{}".format(variable)
+                    f[configpath] = self.get_config(variable, cfg)
+
+            # need to update counter
+            self.counter += 1

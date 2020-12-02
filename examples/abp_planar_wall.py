@@ -2,11 +2,16 @@ import ald
 import numpy as np
 
 
-particle = ald.ABP(U0=1.0, DT=1.0, tauR=1.0)
+# parameters
+U0 = 1
+DT = 1.0
+tauR = 1.0
+
+particle = ald.ABP(U0=U0, DT=DT, tauR=tauR)
 
 flow = ald.ZeroVelocity()
 
-domain = ald.Box(left=0, right=1, bottom=-0.5, top=0.5)
+domain = ald.Box(left=0, right=10, bottom=-0.5, top=0.5)
 
 ic = ald.InitialConfig(
     x=ald.Uniform(domain.left, domain.right),
@@ -14,8 +19,11 @@ ic = ald.InitialConfig(
     theta=ald.Uniform(0, 2 * np.pi),
 )
 
+# simulation parameters
+dt = 1e-4
+Nt = 2000000
 
-cfg = ald.Config(particle, domain, N=204800, dt=1e-4, Nt=2000000)
+cfg = ald.Config(particle, domain, N=204800, dt=dt, Nt=Nt)
 
 kernel = ald.PlanarWallKernel(cfg)
 
@@ -25,11 +33,14 @@ compiler = ald.ABPCompiler(kernel, cfg, flow, ic)
 simulator = ald.ABPSimulator(cfg, compiler)
 
 
-runner = ald.RangedRunner(start=0, stop=cfg.Nt, freq=10000)
+runner = ald.RangedRunner(start=Nt//2, stop=cfg.Nt, freq=10000)
 # setup callbacks.
 file = "abp.h5"
-configsaver = ald.ConfigSaver(runner, file, variables=["x", "y", "theta"])
-callbacks = [ald.ETA(runner), configsaver]
+configsaver = ald.ConfigSaver(runner, file, variables=["x"])
+eta = ald.ETA(ald.RangedRunner(start = 0, stop=cfg.Nt, freq=20000))
+force = ald.SimpleMean(runner, "dx", keep_time=True)
+
+callbacks = [eta, configsaver, force]
 
 
 simulator.run(cfg, callbacks=callbacks)

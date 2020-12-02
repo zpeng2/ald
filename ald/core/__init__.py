@@ -15,7 +15,8 @@ from .callback import (
     CallbackRunner,
     RangedRunner,
     Callback,
-    MeanVariance,
+    DisplacementMeanVariance,
     ETA,
     ConfigSaver,
+    SimpleMean,
 )
