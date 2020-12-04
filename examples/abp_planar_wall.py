@@ -43,8 +43,8 @@ configsaver = ald.ConfigSaver(runner, file, variables=["x"], unwrap=[False])
 eta = ald.ETA(ald.RangedRunner(start=0, stop=cfg.Nt, freq=20000))
 force = ald.SimpleMean(runner, "dx", keep_time=True)
 
-callbacks = [eta, configsaver, force]
-
+#callbacks = [eta, configsaver, force]
+callbacks = [eta]
 
 simulator.run(cfg, callbacks=callbacks)
 # save further data

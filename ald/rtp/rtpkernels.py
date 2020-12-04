@@ -161,8 +161,8 @@ class RTPChannelKernel(AbstractRTPKernel):
         ]
         # need to add containers to cfg
         if self.displacement:
-            setattr(cfg, "dy1", gpuarray.GPUArray(np.float64, cfg.N))
-            setattr(cfg, "dy2", gpuarray.GPUArray(np.float64, cfg.N))
+            setattr(cfg, "dy1", gpuarray.GPUArray(cfg.N, np.float64))
+            setattr(cfg, "dy2", gpuarray.GPUArray(cfg.N, np.float64))
         code = ""
         for bc in bcs:
             code += bc.cuda_code(cfg.domain).__str__()
