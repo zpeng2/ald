@@ -54,20 +54,6 @@ class RTPSimulator(AbstractSimulator):
 
     def update(self, cfg):
         """One step of the Langevin simulation."""
-        self.launch_kernel(
-            self.compiler.update_rtp,
-            cfg.x_old,
-            cfg.y_old,
-            cfg.theta_old,
-            cfg.x,
-            cfg.y,
-            cfg.theta,
-            cfg.passx,
-            cfg.passy,
-            cfg.state,
-            cfg.tauR,
-            cfg.tau,
-            np.float64(cfg.particle.U0),
-            np.float64(cfg.dt),
-            np.int32(cfg.N),
+        self.compiler.kernel.update(
+            self.compiler.update, cfg, self.threadsPerBlock, self.nblocks
         )

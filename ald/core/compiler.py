@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from ald.core.kernel import AbstractKernel
 from ald.core.config import AbstractConfig
 from ald.core.ic import InitialConfig
 from ald.core.particle import AbstractParticle, AbstractRTP, Pareto, RTP
@@ -13,7 +14,7 @@ from jinja2 import Template
 import os
 
 # base cuda code.
-cuda_code = """
+cuda_code_base = """
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #define PI 3.141592653589793
@@ -43,6 +44,7 @@ return a+(b-a)*curand_uniform_double(state);
 class AbstractCompiler(ABC):
     def __init__(
         self,
+        kernel,
         cfg,
         flow=ZeroVelocity(),
         ic=InitialConfig(),
@@ -51,21 +53,25 @@ class AbstractCompiler(ABC):
             raise TypeError()
         if not isinstance(flow, ExternalVelocity):
             raise TypeError()
+        if not isinstance(kernel, AbstractKernel):
+            raise TypeError()
+        self.kernel = kernel
         self.particle = cfg.particle
         self.domain = cfg.domain
         self.flow = flow
         self.ic = ic
         # base cuda code that is used.
-        self.cuda_code_base = cuda_code
+        self.cuda_code_base = cuda_code_base
+        # fully rendered cuda code.
+        self.cuda_code = self.generate_cuda_code(cfg, flow)
 
     @abstractmethod
     def compile(self, *args, **kwargs):
         """Child class must define a concrete compile method."""
         pass
 
-    @property
     @abstractmethod
-    def cuda_code(self):
+    def generate_cuda_code(self, *args, **kwargs):
         """This should be the full cuda code"""
         pass
 

@@ -25,23 +25,26 @@ Nt = 2000000
 
 cfg = ald.Config(particle, domain, N=204800, dt=dt, Nt=Nt)
 
-kernel = ald.PlanarWallKernel(cfg)
+kernel = ald.ABPSingleWallKernel()
 
 
 compiler = ald.ABPCompiler(kernel, cfg, flow, ic)
+compiler.compile()
+
 
 simulator = ald.ABPSimulator(cfg, compiler)
 
 
-runner = ald.RangedRunner(start=Nt//2, stop=cfg.Nt, freq=10000)
+runner = ald.RangedRunner(start=Nt // 2, stop=cfg.Nt, freq=10000)
 # setup callbacks.
-file = "abp_U{}DT{}DR{}.h5".format(U0, DT, particle.DR)
-configsaver = ald.ConfigSaver(runner, file, variables=["x"])
-eta = ald.ETA(ald.RangedRunner(start = 0, stop=cfg.Nt, freq=20000))
+file = "U{}DT{}DR{}.h5".format(U0, DT, particle.DR)
+
+configsaver = ald.ConfigSaver(runner, file, variables=["x"], unwrap=[False])
+eta = ald.ETA(ald.RangedRunner(start=0, stop=cfg.Nt, freq=20000))
 force = ald.SimpleMean(runner, "dx", keep_time=True)
 
-callbacks = [eta, configsaver, force]
-
+#callbacks = [eta, configsaver, force]
+callbacks = [eta]
 
 simulator.run(cfg, callbacks=callbacks)
 # save further data

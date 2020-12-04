@@ -16,7 +16,7 @@ flow = ald.ZeroVelocity()
 # channel width
 H = 1.0
 
-domain = ald.Box.from_channel(Ly=H)
+domain = ald.Box(bottom=-H/2, top = H/2)
 
 # initial condition
 ic = ald.InitialConfig(
@@ -36,8 +36,11 @@ Nt = 2000000
 # setup system configuration
 cfg = ald.Config(particle, domain, N=N, dt=dt, Nt=Nt)
 
+kernel = ald.RTPChannelKernel()
 
-compiler = ald.RTPCompiler(cfg, flow, ic)
+compiler = ald.RTPCompiler(kernel,cfg, flow, ic)
+compiler.compile()
+
 
 simulator = ald.RTPSimulator(cfg, compiler)
 

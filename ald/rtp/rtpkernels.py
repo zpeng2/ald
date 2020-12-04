@@ -16,10 +16,21 @@ from ald.core.bc import (
 )
 
 
-abp_kernel_template = Template(
+
+rtp_kernel_template = Template(
     """
 extern "C" {
-// evolution of ABPs in 2D
+__global__ void draw_runtimes(double *tauR,
+    curandState *state,
+    const int N)
+{ // for loop allows more particles than threads.
+for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
+    tid += blockDim.x * gridDim.x) {
+    tauR[tid] = {{runtime}};
+    }
+}
+
+// evolution of RTPs in 2D.
 __global__ void
 update(double *__restrict__ xold,       // old position in x
        double *__restrict__ yold,       // old position in y
@@ -30,23 +41,35 @@ update(double *__restrict__ xold,       // old position in x
        int *__restrict__ passx,         // total boundary crossings in x
        int *__restrict__ passy,         // total boundary crossings in y
        curandState *__restrict__ state, // RNG state
+       double *__restrict__ tauR, // reorientation time for each active particle
+       double *__restrict__ tau,  // time since last reorientation.
        double U0,                 // ABP swim speed
        double dt,   // time step
        int N{{arg_list}}
        )
-
 {
 // for loop allows more particles than threads.
 for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
     tid += blockDim.x * gridDim.x) {
+// need to tumble
+if (tau[tid] >= tauR[tid]) {
+    // the orientation needs to change in a discrete fashion due to
+    // tumbling. pick a new orientation uniformly between 0 and 2pi
+    thetaold[tid] = curand_uniform_double(&state[tid]) * 2.0 * PI;
+    // reset time since last tumble to zero.
+    tau[tid] = 0.0;
+    // after tumbling, need to draw a new tumbling time.
+    tauR[tid] = {{runtime}};
+}
 // next update the position and orientation
-x[tid] = xold[tid] + dt * {{ux}} + dt * U0 * cos(thetaold[tid]) + {{xB}}*curand_normal_double(&state[tid]);
+x[tid] = xold[tid] + dt * {{ux}} + dt * U0 * cos(thetaold[tid]);
 
-y[tid] = yold[tid] + dt * {{uy}} + dt * U0 * sin(thetaold[tid])+ {{yB}}*curand_normal_double(&state[tid]);
+y[tid] = yold[tid] + dt * {{uy}} + dt * U0 * sin(thetaold[tid]);
 
-// update orientation
-theta[tid] = thetaold[tid] + dt*{{omega}} + {{thetaB}}*curand_normal_double(&state[tid]);
-
+// theta is only changing due to the vorticity of the flow at this stage!
+theta[tid] = thetaold[tid] + dt * {{omega}};
+// need to update time since last tumble.
+tau[tid] += dt;
 {{code}}
 // set old to new.
 xold[tid] = x[tid];
@@ -59,21 +82,15 @@ thetaold[tid] = theta[tid];
 )
 
 
-class AbstractABPKernel(AbstractKernel):
+class AbstractRTPKernel(AbstractKernel):
     def __init__(self, arg_list):
-        # abp kernel template
-        self.kernel_tempalte = abp_kernel_template
+        # rtp kernel template
+        self.kernel_tempalte = rtp_kernel_template
         super().__init__(arg_list)
         # store domain and flow info
 
-    def compute_diffusion_amplitue(self, cfg):
-        """compute xB, yB and thetaB"""
-        xB = np.sqrt(2 * cfg.dt * cfg.particle.DT)
-        thetaB = np.sqrt(2 * cfg.dt * cfg.particle.DR)
-        return xB, xB, thetaB
 
-
-class ABPFreespaceKernel(AbstractABPKernel):
+class RTPFreespaceKernel(AbstractRTPKernel):
     """Doubly periodic BC."""
 
     def __init__(self):
@@ -89,16 +106,12 @@ class ABPFreespaceKernel(AbstractABPKernel):
             # add a new line
             code += "\n"
         # now ready to render kernel template
-        # compute Brownian displacement amplitudes
-        xB, yB, thetaB = self.compute_diffusion_amplitue(cfg)
         kernel = self.kernel_tempalte.render(
             arg_list=self.arg_list,
+            runtime=cfg.particle.runtime_code,
             ux=flow.ux,
             uy=flow.uy,
             omega=flow.omega,
-            xB=xB,
-            yB=yB,
-            thetaB=thetaB,
             code=code,
         )
         return kernel
@@ -114,6 +127,8 @@ class ABPFreespaceKernel(AbstractABPKernel):
             cfg.passx,
             cfg.passy,
             cfg.state,
+            cfg.tauR,
+            cfg.tau,
             np.float64(cfg.particle.U0),
             np.float64(cfg.dt),
             np.int32(cfg.N),
@@ -123,8 +138,9 @@ class ABPFreespaceKernel(AbstractABPKernel):
         return None
 
 
-class ABPChannelKernel(AbstractABPKernel):
-    """No flux boudnaries at top and bottom"""
+
+class RTPChannelKernel(AbstractRTPKernel):
+    """No flux walls at top and bottom."""
 
     def __init__(self, displacement=False):
         # no additional args
@@ -153,16 +169,12 @@ class ABPChannelKernel(AbstractABPKernel):
             # add a new line
             code += "\n"
         # now ready to render kernel template
-        # compute Brownian displacement amplitudes
-        xB, yB, thetaB = self.compute_diffusion_amplitue(cfg)
         kernel = self.kernel_tempalte.render(
             arg_list=self.arg_list,
+            runtime=cfg.particle.runtime_code,
             ux=flow.ux,
             uy=flow.uy,
             omega=flow.omega,
-            xB=xB,
-            yB=yB,
-            thetaB=thetaB,
             code=code,
         )
         return kernel
@@ -179,6 +191,8 @@ class ABPChannelKernel(AbstractABPKernel):
                 cfg.passx,
                 cfg.passy,
                 cfg.state,
+                cfg.tauR,
+                cfg.tau,
                 np.float64(cfg.particle.U0),
                 np.float64(cfg.dt),
                 np.int32(cfg.N),
@@ -198,6 +212,8 @@ class ABPChannelKernel(AbstractABPKernel):
                 cfg.passx,
                 cfg.passy,
                 cfg.state,
+                cfg.tauR,
+                cfg.tau,
                 np.float64(cfg.particle.U0),
                 np.float64(cfg.dt),
                 np.int32(cfg.N),
