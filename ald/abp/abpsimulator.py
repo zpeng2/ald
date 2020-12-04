@@ -42,5 +42,5 @@ class ABPSimulator(AbstractSimulator):
     def update(self, cfg):
         """One step of the Langevin simulation."""
         self.compiler.kernel.update(
-            self.compiler.update_abp, cfg, self.threadsPerBlock, self.nblocks
+            self.compiler.update, cfg, self.threadsPerBlock, self.nblocks
         )
