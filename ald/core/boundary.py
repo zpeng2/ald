@@ -1,7 +1,6 @@
 from jinja2 import Template
 
 
-
 class AbstractDomain:
     """Abstract Simulation box"""
 
@@ -18,9 +17,9 @@ class Box(AbstractDomain):
         bottom=-0.5,
         top=0.5,
     ):
-        if right < left:
+        if right <= left:
             raise ValueError("right <left")
-        if top < bottom:
+        if top <= bottom:
             raise ValueError("top < bottom")
         self.Lx = right - left
         self.Ly = top - bottom
@@ -31,8 +30,6 @@ class Box(AbstractDomain):
 
     def __repr__(self):
         return "[{}, {}]x[{}, {}]".format(self.left, self.right, self.bottom, self.top)
-
-
 
 
 # class AbstractBC:

@@ -16,7 +16,6 @@ from ald.core.bc import (
 )
 
 
-
 rtp_kernel_template = Template(
     """
 extern "C" {
@@ -136,7 +135,6 @@ class RTPFreespaceKernel(AbstractRTPKernel):
             grid=(blocks, 1),
         )
         return None
-
 
 
 class RTPChannelKernel(AbstractRTPKernel):
