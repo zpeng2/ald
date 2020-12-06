@@ -4,7 +4,8 @@ import h5py
 
 U0 = 0.1
 tauR = 1.0
-particle = ald.RTP(U0=U0, tauR=tauR)
+particle = ald.ExponentialRTP(U0=U0, tauR=tauR)
+
 
 # still using 2D interface
 flow = ald.ZeroVelocity()
@@ -15,7 +16,7 @@ ic = ald.InitialConfig(x=ald.Uniform(domain.left, domain.right))
 
 N = 1000000
 dt = 1e-4
-Nt = 2000000
+Nt = 4000000
 cfg = ald.Config(particle, domain, N=N, dt=dt, Nt=Nt)
 
 
