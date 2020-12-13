@@ -32,3 +32,11 @@ class Poiseuille(ExternalVelocity):
         uy = "0"
         omega = "4*{0}*yold[tid]/({1}*{1})".format(uf, H)
         super().__init__(ux, uy, omega)
+
+class ConstantUx(ExternalVelocity):
+    def __init__(self, U=1.):
+        ux = "{0}".format(U)
+        # no flow in y direction.
+        uy = "0"
+        omega = "0"
+        super().__init__(ux, uy, omega)

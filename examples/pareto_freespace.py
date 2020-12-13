@@ -3,21 +3,27 @@ import numpy as np
 import h5py
 
 U0 = 1.0
-tauR = 1.2
-particle = ald.ExponentialRTP(U0=U0, tauR=tauR)
+
+
+alpha = 1.2
+tauR = 1.0
+L=1.0 # simulation box dimension.
+particle = ald.Pareto(U0=U0, tauR=tauR)
 
 flow = ald.ZeroVelocity()
-domain = ald.Box()
-
+domain = ald.Box(left=-L/2, right=L/2, bottom=-L/2, top=L/2)
 
 ic = ald.InitialConfig(
-    x=ald.Point((domain.left + domain.right) / 2),
-    y=ald.Point((domain.bottom + domain.top) / 2),
+    x=ald.Uniform(domain.left, domain.right),
+    y=ald.Uniform(domain.bottom, domain.top),
     theta=ald.Uniform(0, 2 * np.pi),
 )
 
-
-cfg = ald.Config(particle, domain, N=204800, dt=1e-4, Nt=4_000_000)
+# number of particles
+N = 300_000
+dt = 1e-4
+Nt = 40_000_000
+cfg = ald.Config(particle, domain, N=N, dt=dt, Nt=Nt)
 
 kernel = ald.RTPFreespaceKernel()
 compiler = ald.RTPCompiler(kernel, cfg, flow, ic)
@@ -26,7 +32,8 @@ compiler.compile()
 
 simulator = ald.RTPSimulator(cfg, compiler)
 
-file = "U{:.3f}tauR{:.3f}.h5".format(U0, tauR)
+file = "U{:.3f}alpha{:.3f}free.h5".format(U0, alpha)
+
 # create an empty file
 with h5py.File(file, "w") as f:
     pass

@@ -2,9 +2,9 @@ import ald
 import numpy as np
 import h5py
 
-U0 = 0.1
+U0 = 0.5
 tauR = 1.0
-particle = ald.ExponentialRTP(U0=U0, tauR=tauR)
+particle = ald.RTP(U0=U0, tauR=tauR)
 
 
 # still using 2D interface

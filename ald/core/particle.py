@@ -3,11 +3,13 @@ from jinja2 import Template
 
 
 class AbstractParticle:
-    pass
+    def __init__(self, a=0.0):
+        self.a = a
 
 
 class ABP(AbstractParticle):
-    def __init__(self, U0=1.0, tauR=1.0, DT=1.0):
+    def __init__(self, U0=1.0, tauR=1.0, DT=1.0, a=0.0):
+        super().__init__(a)
         self.U0 = U0
         self.tauR = tauR
         self.DR = 1 / tauR
@@ -22,7 +24,8 @@ class ABP(AbstractParticle):
 
 
 class AbstractRTP(AbstractParticle):
-    def __init__(self, U0=1.0, tauR=1.0, runtime_code="None"):
+    def __init__(self, U0=1.0, tauR=1.0, runtime_code="None", a=0.0):
+        super().__init__(a)
         # tauR is the mean runtime.
         self.tauR = tauR
         self.U0 = U0
@@ -32,9 +35,9 @@ class AbstractRTP(AbstractParticle):
 class RTP(AbstractRTP):
     """Constant runtime RTP."""
 
-    def __init__(self, U0=1.0, tauR=1.0):
+    def __init__(self, U0=1.0, tauR=1.0, a=0.0):
         runtime_code = "{}".format(tauR)
-        super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code)
+        super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code, a=a)
         # not needed for RTP, just use \n.
         self.runtime_device_code = "\n"
 
@@ -55,12 +58,12 @@ __device__ double exponential_runtime(curandState *state, double tauR) {
 
 
 class ExponentialRTP(AbstractRTP):
-    def __init__(self, U0=1.0, tauR=1.0):
+    def __init__(self, U0=1.0, tauR=1.0, a=0.0):
         """tauR is the mean run time. PDF is lambda *exp(-lambda*x)
         The mean is 1/lambda = tauR.
         """
         runtime_code = "exponential_runtime(&state[tid], {})".format(tauR)
-        super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code)
+        super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code, a=a)
         self.lam = 1 / tauR
         # runtime device code that need to be added to the compiler.
         self.runtime_device_code = exponential_runtime_device
@@ -89,12 +92,12 @@ return taum / pow(U, 1.0 / alpha);
 
 
 class Pareto(AbstractRTP):
-    def __init__(self, U0=1.0, tauR=1.0, alpha=1.2):
+    def __init__(self, U0=1.0, tauR=1.0, alpha=1.2, a=0.0):
         self.alpha = alpha
         self.taum = (alpha - 1) * tauR / alpha
         # see compiler for details.
         runtime_code = "pareto_runtime(&state[tid], {}, {})".format(tauR, alpha)
-        super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code)
+        super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code, a=a)
 
         # runtime device code that need to be added to the compiler.
         self.runtime_device_code = pareto_runtime_device

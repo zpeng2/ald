@@ -8,7 +8,7 @@ from .ic import AbstractIC, Point, Uniform, InitialConfig
 
 from .config import AbstractConfig, Config
 
-from .external_velocity import ExternalVelocity, ZeroVelocity, Poiseuille
+from .external_velocity import ExternalVelocity, ZeroVelocity, Poiseuille, ConstantUx
 
 from .kernel import AbstractKernel
 
