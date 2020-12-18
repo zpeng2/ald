@@ -5,13 +5,13 @@ import h5py
 U0 = 1.0
 
 
-alpha = 1.2
+alpha = 3.0
 tauR = 1.0
-L=1.0 # simulation box dimension.
+L = 1.0  # simulation box dimension.
 particle = ald.Pareto(U0=U0, tauR=tauR)
 
 flow = ald.ZeroVelocity()
-domain = ald.Box(left=-L/2, right=L/2, bottom=-L/2, top=L/2)
+domain = ald.Box(left=-L / 2, right=L / 2, bottom=-L / 2, top=L / 2)
 
 ic = ald.InitialConfig(
     x=ald.Uniform(domain.left, domain.right),

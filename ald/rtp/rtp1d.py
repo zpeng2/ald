@@ -65,9 +65,10 @@ for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
   // need to tumble
 if (tau[tid] >= tauR[tid]) {
   // tumbles between +1 and -1: randomly
-  double U = curand_uniform_double(&state[tid]);
-  // only 50% chance of tumbling away
-  if (U <= 0.5) {direction[tid] *= -1;}
+//  double U = curand_uniform_double(&state[tid]);
+//  // only 50% chance of tumbling away
+//  if (U <= 0.5) {direction[tid] *= -1;}
+  direction[tid] *= -1; // always changing direction once runtime is reached.
   // reset time since last tumble to zero.
   tau[tid] = 0.0;
   // after tumbling, need to draw a new tumbling time.

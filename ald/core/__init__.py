@@ -1,8 +1,17 @@
 from .particle import AbstractParticle, AbstractRTP, ABP, RTP, Pareto, ExponentialRTP
 
-from .boundary import AbstractDomain, Box
+from .boundary import AbstractDomain, Box, Disk
 
-from .bc import LeftNoFlux, RightNoFlux, BottomNoFlux, TopNoFlux, LeftPBC, RightPBC, BottomPBC, TopPBC
+from .bc import (
+    LeftNoFlux,
+    RightNoFlux,
+    BottomNoFlux,
+    TopNoFlux,
+    LeftPBC,
+    RightPBC,
+    BottomPBC,
+    TopPBC,
+)
 
 from .ic import AbstractIC, Point, Uniform, InitialConfig
 

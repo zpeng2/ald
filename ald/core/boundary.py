@@ -32,6 +32,16 @@ class Box(AbstractDomain):
         return "[{}, {}]x[{}, {}]".format(self.left, self.right, self.bottom, self.top)
 
 
+class Disk(AbstractDomain):
+    """Disk interiorsimulation domain."""
+
+    def __init__(self, R=1.0):
+        self.R = R
+
+    def __repr__(self):
+        return "Disk(R={:.3f})".format(self.R)
+
+
 # class AbstractBC:
 #     pass
 

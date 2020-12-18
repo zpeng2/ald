@@ -16,6 +16,11 @@ class CallbackRunner(ABC):
         pass
 
 
+class Always(CallbackRunner):
+    def iscomputing(self, i):
+        return True
+
+
 class RangedRunner(CallbackRunner):
     """Run callback if an index is in a range."""
 
@@ -243,3 +248,32 @@ class ConfigSaver(Callback):
 
             # need to update counter
             self.counter += 1
+
+
+# class RuntimeSaver(Callback):
+#     """Save the sampled runtime history of aprticles."""
+
+#     def __init__(self, file):
+#         runner = Always()
+#         super().__init__(runner)
+#         if not isinstance(file, str):
+#             raise TypeError("invalid filename")
+#         self.file = file
+#         # array of runtime history regardless of particle id.
+#         self.runtimes = []
+
+#     def __call__(self, i, cfg):
+#         if self.runner.iscomputing(i):
+#             tauR = cfg.tauR.get()
+#             tau = cfg.tau.get()
+#             # if tau is zero, means I just tumbled and my runtime is newly generated.
+#             # and I need to record it.
+#             for i in range(cfg.N):
+#                 if tau[i] == 0.0:
+#                     self.runtimes.append(tauR[i])
+
+#     def save2h5(self):
+#         with h5py.File(self.file, "r+") as f:
+#             path = "runtimes"
+#             # keep track of time
+#             f[path] = np.array(self.runtimes)

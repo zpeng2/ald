@@ -35,6 +35,7 @@ runner = ald.RangedRunner(start=0, stop=cfg.Nt, freq=10000)
 # setup callbacks.
 x = ald.DisplacementMeanVariance(runner, "x", unwrap=True)
 y = ald.DisplacementMeanVariance(runner, "y", unwrap=True)
+
 # y = ald.MeanVariance(runner, "y", unwrap=True)
 callbacks = [x, y, ald.ETA(runner)]
 

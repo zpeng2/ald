@@ -1,3 +1,4 @@
+from numpy.lib.arraysetops import isin
 from ald.core.external_velocity import ZeroVelocity
 from jinja2 import Template
 from abc import ABC, abstractmethod
@@ -14,6 +15,7 @@ from ald.core.bc import (
     BottomPBC,
     TopPBC,
 )
+from ald.core.boundary import Disk
 
 
 rtp_kernel_template = Template(
@@ -218,4 +220,63 @@ class RTPChannelKernel(AbstractRTPKernel):
                 block=(threads, 1, 1),
                 grid=(blocks, 1),
             )
+        return None
+
+
+disk_interior_bc = Template(
+    """
+// compute radial coordinate of the particle
+double rp = sqrt(x[tid]*x[tid]+y[tid]*y[tid]);
+if (rp > {{R}})
+{
+    x[tid] *= {{R}}/rp;
+    y[tid] *= {{R}}/rp;
+}
+"""
+)
+
+
+class RTPDiskKernel(AbstractRTPKernel):
+    """Disk interior problem, no flux wall"""
+
+    def __init__(self):
+        # no additional args
+        # whether to record collision displacements on the walls.
+        arg_list = ""
+        super().__init__(arg_list)
+
+    def generate_cuda_code(self, cfg, flow):
+        if not isinstance(cfg.domain, Disk):
+            raise TypeError("expects a Disk domain.")
+        bcs = disk_interior_bc.render(R=cfg.domain.R)
+        # now ready to render kernel template
+        kernel = self.kernel_tempalte.render(
+            arg_list=self.arg_list,
+            runtime=cfg.particle.runtime_code,
+            ux=flow.ux,
+            uy=flow.uy,
+            omega=flow.omega,
+            code=bcs,
+        )
+        return kernel
+
+    def update(self, func, cfg, threads, blocks):
+        func(
+            cfg.x_old,
+            cfg.y_old,
+            cfg.theta_old,
+            cfg.x,
+            cfg.y,
+            cfg.theta,
+            cfg.passx,
+            cfg.passy,
+            cfg.state,
+            cfg.tauR,
+            cfg.tau,
+            np.float64(cfg.particle.U0),
+            np.float64(cfg.dt),
+            np.int32(cfg.N),
+            block=(threads, 1, 1),
+            grid=(blocks, 1),
+        )
         return None

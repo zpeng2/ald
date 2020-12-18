@@ -9,6 +9,7 @@ from ald.core.bc import (
 from ald.core.config import AbstractConfig
 import pycuda.gpuarray as gpuarray
 import numpy as np
+from ald.core.particle import ABP
 
 
 class RheologyConfiger:
@@ -60,7 +61,13 @@ class RheologyConfiger:
 
 
 class RheologyConfig(AbstractConfig):
-    def __init__(self, particle, domain, a, b, px, py, Up, N, dt, Nt):
+    def __init__(self, gamma=1.0, Pes=1.0, Pe=1.0, N=204800, dt=1e-4, Nt=1_000_000):
+        self.gamma = gamma
+        self.Pes = Pes
+        self.Pe = Pe
+        self.set_dimensional()
+        particle = ABP(U0=self.U0, tauR=self.tauR, DT=self.DT, a=self.a)
+
         super().__init__(particle, domain, N, dt, Nt)
         self.a = a
         self.b = b
@@ -70,6 +77,37 @@ class RheologyConfig(AbstractConfig):
         # need to add additional arrays to save collision
         self.dx = gpuarray.GPUArray(N, dtype=np.float64)
         self.dy = gpuarray.GPUArray(N, dtype=np.float64)
+
+    def set_dimensional(self):
+        self.DT = 1.0
+        self.a = 1.0
+        self.b = 1.0
+        self.Rc = self.a + self.b
+        # probe speed
+        self.U1 = self.Pe * self.DT / self.Rc
+        self.U2 = self.Pes * self.DT / self.Rc
+        self.delta = self.Rc / self.gamma
+        self.tauR = self.delta ** 2 / self.DT
+        self.ell = self.U2 * self.tauR
+        self.DR = 1 / self.tauR
+
+    def set_timescales(self):
+        ts = []
+        # small advection time
+        if not (self.U1 == 0.0 and self.U2 == 0.0):
+            ts.append(self.a / max(self.U1, self.U2))
+        if self.U1 != 0.0 and self.U2 != 0.0:
+            # large advection time
+            ts.append(self.a / min(self.U1, self.U2))
+        # diffusive time
+        ts.append(self.a ** 2 / self.DT)
+        # reorientation time
+        # only need this for active particles
+        if self.U2 != 0.0:
+            ts.append(self.tauR)
+        # determine min and max time scales.
+        self.minscale = np.min(ts)
+        self.maxscale = np.max(ts)
 
     @classmethod
     def from_configer(cls, configer):
