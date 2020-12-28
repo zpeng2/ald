@@ -1,20 +1,19 @@
 import ald
 import numpy as np
+import h5py
 
+gamma = 1
+Pes = 1
+Pe = 1
+params = ald.RheologyParams(gamma=gamma, Pes=Pes, Pe=Pe)
+file = "gamma{:.3f}Pes{:.3f}Pe{:.3f}.h5".format(params.gamma, params.Pes, params.Pe)
+with h5py.File(file, "w") as _:
+    pass
 
+cfg = ald.RheologyConfig(params)
+cfg.save2h5(file)
 
-
-# def simulate(U0):
-U0 = 0
-DT = 1.0
-tauR = 1.0
-particle = ald.ABP(U0=U0, DT=DT, tauR=tauR)
-
-
-flow = ald.ZeroVelocity()
-L = 10
-
-domain = ald.Box(left=0, right=L, bottom=0, top=L)
+domain = cfg.domain
 
 ic = ald.InitialConfig(
     x=ald.Uniform(domain.left, domain.right),
@@ -22,35 +21,37 @@ ic = ald.InitialConfig(
     theta=ald.Uniform(0, 2 * np.pi),
 )
 
-# simulation parameters
-dt = 1e-4
-Nt = 4000000
+kernel = ald.RheologyKernel(params)
 
-# cfg = ald.RheologyConfig
-# Config(particle, domain, N=204800, dt=dt, Nt=Nt)
-
-kernel = ald.ABPSingleWallKernel()
+flow = ald.ZeroVelocity()
 
 compiler = ald.ABPCompiler(kernel, cfg, flow, ic)
+#  compiler.log2file("rheo.cu")
 compiler.compile()
+
 
 simulator = ald.ABPSimulator(cfg, compiler)
 
 # setup callbacks.
-file = "U{:.3f}singlewall.h5".format(U0)
-runner = ald.RangedRunner.from_backward_count(stop=cfg.Nt, freq=10000, count=100)
-configsaver = ald.ConfigSaver(runner, file, variables=["x"], unwrap=[False])
-eta = ald.ETA(ald.RangedRunner(start=0, stop=cfg.Nt, freq=20000))
-force = ald.SimpleMean(runner, "dx", keep_time=True)
 
-# callbacks = [eta, configsaver, force]
-callbacks = [eta, configsaver, force]
+
+#  configsaver = ald.ConfigSaver(runner, file, variables=["x"], unwrap=[False])
+eta = ald.ETA(ald.RangedRunner(start=0, stop=cfg.Nt, freq=20000))
+
+runner = ald.RangedRunner(start=int(params.Nt / 2), stop=params.Nt, freq=100)
+runner = ald.RangedRunner(start=int(params.Nt  /  2), stop=params.Nt, freq=100)
+dx = ald.SimpleMean(runner, "dx", keep_time=True)
+dy = ald.SimpleMean(runner, "dy", keep_time=True)
+# # callbacks = [eta, configsaver, force]
+callbacks = [eta, dx, dy]
+
 
 simulator.run(cfg, callbacks=callbacks)
 # save further data
-force.save2h5(file, "dx")
+#   force.save2h5(file, "dx")
 # save other attributes
-cfg.save2h5(file)
+dx.save2h5(file, "dx")
+dy.save2h5(file, "dy")
 
 
 # if __name__ == "__main__":

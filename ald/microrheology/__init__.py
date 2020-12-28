@@ -1,3 +1,4 @@
-from .rheology import RheologyConfiger, RheologyConfig
+from .rheology import RheologyParams, RheologyConfig, RheologyKernel
+
 
 
