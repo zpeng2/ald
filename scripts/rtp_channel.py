@@ -1,6 +1,9 @@
 import ald
 import numpy as np
 import h5py
+import pycuda.gpuarray as gpuarray
+import pycuda.driver as cuda
+
 
 U0 = 1.0
 tauR = 0.3
@@ -20,13 +23,13 @@ ic = ald.InitialConfig(
 )
 
 
-cfg = ald.Config(particle, domain, N=300000, dt=1e-4, Nt=4000000)
+cfg = ald.Config(particle, domain, N=204800, dt=1e-4, Nt=4_000_000)
 
 # Specify the channel problem
 kernel = ald.RTPChannelKernel()
 
 compiler = ald.RTPCompiler(kernel, cfg, flow, ic)
-
+#compiler.log2file("a.cu")
 compiler.compile()
 
 simulator = ald.RTPSimulator(cfg, compiler)
@@ -52,8 +55,23 @@ configsaver = ald.ConfigSaver(
     unwrap=[True, False, False],
 )
 
+class DebugCallback(ald.Callback):
+    def __init__(self, runner):
+        super().__init__(runner)
 
-callbacks = [x, y, eta, configsaver]
+    def __call__(self, i, cfg):
+        if self.runner.iscomputing(i):
+            y = cfg.y.get()
+            y = y.min()
+            #y = float(y.get())
+            if y < -0.5:
+                print(y)
+
+debug = DebugCallback(ald.RangedRunner(start=0, stop=cfg.Nt, freq=1))
+
+
+
+callbacks = [x, y, eta, configsaver]#, debug]
 
 simulator.run(cfg, callbacks=callbacks)
 

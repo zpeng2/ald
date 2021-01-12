@@ -43,9 +43,9 @@ class AbstractNoFlux(AbstractBC):
         block = cgen.Block(exprs)
         # penetration condition.
         if orientation == -1:
-            compare = "<"
+            compare = "< "
         else:
-            compare = ">"
+            compare = "> "
         bc = cgen.If("{0}[tid]{1}{2}".format(position_var, compare, loc), block)
         return bc
 
@@ -89,13 +89,13 @@ class AbstractPBC(AbstractBC):
         # bc block
         if orientation == -1:
             # left or bottom
-            compare = "<"
+            compare = "< "
             move = cgen.ExpressionStatement("{}[tid] += {}".format(position_var, L))
             #
             crossing = cgen.ExpressionStatement("pass{}[tid] += -1".format(position_var))
         else:
             # right or top
-            compare = ">"
+            compare = "> "
             move = cgen.ExpressionStatement("{}[tid] -= {}".format(position_var, L))
             #
             crossing = cgen.ExpressionStatement("pass{}[tid] += 1".format(position_var))

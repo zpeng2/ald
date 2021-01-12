@@ -87,13 +87,13 @@ class DisplacementMeanVariance(Callback):
 
     def mean_variance(self, cfg):
         # get data.
-        x = getattr(cfg, self.variable)
+        x = getattr(cfg, self.variable).copy()
         # initial location
-        x0 = getattr(cfg, self.variable + "0")
+        x0 = getattr(cfg, self.variable + "0").copy()
         # unwrap
         if self.unwrap:
             # get the boundary crossing array.
-            passx = getattr(cfg, "pass" + self.variable)
+            passx = getattr(cfg, "pass" + self.variable).copy()
             # do unwrap
             L = getattr(cfg.domain, "L" + self.variable)
             # need the relative to the initial positions
@@ -145,7 +145,7 @@ class SimpleMean(Callback):
 
     def compute_mean(self, cfg):
         # get data.
-        x = getattr(cfg, self.variable)
+        x = getattr(cfg, self.variable).copy()
         N = len(x)
         mean_x = gpuarray.sum(x) / N
         # copy to cpu and flatten

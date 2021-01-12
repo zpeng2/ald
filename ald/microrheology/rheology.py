@@ -137,6 +137,10 @@ class RheologyConfig(AbstractConfig):
         # need to add additional arrays to save collision
         self.dx = gpuarray.GPUArray(N, dtype=np.float64)
         self.dy = gpuarray.GPUArray(N, dtype=np.float64)
+        # compute area fraction
+        # free volumn
+        V = self.L * self.W - np.pi * self.a ** 2
+        self.phi = N * np.pi * self.b ** 2 / V
 
     def save2h5(self, file):
         """Save particle, domain simulation attributes to hdf5"""
@@ -147,6 +151,7 @@ class RheologyConfig(AbstractConfig):
                     f.attrs[attr] = value
             # save additional parameter.s
             f.attrs["N"] = self.N
+            f.attrs["phi"] = self.phi
 
 
 rheology_kernel_template = Template(
