@@ -1,4 +1,3 @@
-from numpy.lib.arraysetops import isin
 import pycuda.gpuarray as gpuarray
 from abc import abstractmethod, ABC
 import numpy as np

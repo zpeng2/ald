@@ -1,4 +1,3 @@
-from numpy.lib.arraysetops import isin
 from ald.core.external_velocity import ZeroVelocity
 from jinja2 import Template
 from abc import ABC, abstractmethod

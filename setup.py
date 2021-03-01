@@ -8,7 +8,7 @@ setup(
     author="Zhiwei Peng",
     author_email="zhiweipeng1@gmail.com",
     python_requires=">=3.4",
-    install_requires=["pycuda", "numpy", "jinja2", "h5py"],
+    install_requires=["pycuda", "numpy", "jinja2", "h5py", "cgen"],
     license="MIT",
     packages=["ald", "ald.rtp", "ald.core", "ald.abp", "ald.microrheology"],
     zip_safe=False,

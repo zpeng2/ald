@@ -1,4 +1,3 @@
-from typing_extensions import runtime
 from ald.core.compiler import AbstractCompiler
 from ald.core.particle import AbstractRTP, RTP, Pareto
 from ald.core.external_velocity import ExternalVelocity, ZeroVelocity, Poiseuille
