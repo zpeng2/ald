@@ -4,8 +4,9 @@ import h5py
 
 U0 = 1
 tauR = 0.2
-particle = ald.Pareto(U0=U0, tauR=tauR)
-
+alpha = 1.2
+# particle = ald.Pareto(U0=U0, tauR=tauR)
+particle = ald.Lomax(U0=U0, tauR=tauR, alpha=alpha)
 
 # still using 2D interface
 flow = ald.ZeroVelocity()
