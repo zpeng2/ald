@@ -108,3 +108,37 @@ class Pareto(AbstractRTP):
                 self.U0, self.tauR, self.alpha, self.taum
             )
         )
+
+
+
+lomax_runtime_device = """
+// generate Lomax
+// https://en.wikipedia.org/wiki/Lomax_distribution
+extern "C" {
+__device__ double lomax_runtime(curandState *state, double tauR,
+                                double alpha) {
+// !! tauR is the mean runtime
+double lam = (alpha - 1.0) * tauR;
+// curand_uniform_double is uniformly distributed in (0,1)
+double U = curand_uniform_double(state);
+return lam*(pow(1-U, -1.0/alpha) - 1.0);
+}
+}
+"""
+class Lomax(AbstractRTP):
+    def __init__(self, U0=1.0, tauR=1.0, alpha=1.2, a=0.0):
+        self.alpha = alpha
+        # tauR is always the mean runtime.
+        # tauR = lambda/(alpha-1)
+        self.lambda = tauR*(alpha-1)
+        # see compiler for details.
+        runtime_code = "lomax_runtime(&state[tid], {}, {})".format(tauR, alpha)
+        super().__init__(U0=U0, tauR=tauR, runtime_code=runtime_code, a=a)
+        # runtime device code that need to be added to the compiler.
+        self.runtime_device_code = lomax_runtime_device
+    def __repr__(self):
+        return (
+            "Lomax(U0 = {:.3f}, tauR= {:.3f}, alpha = {:.2f}, lambda = {:.3f})".format(
+                self.U0, self.tauR, self.alpha, self.lambda
+            )
+        )

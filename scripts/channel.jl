@@ -23,34 +23,51 @@ begin
 	import Pda
 end
 
-# ╔═╡ c7b74ea0-5469-11eb-0ee4-73b2f96e3b07
-@bind frame PlutoUI.Slider(0:99)
+# ╔═╡ 8fa90742-5522-11eb-230f-89826748854e
+file = "../examples/U1.000tauR0.2001D.h5"
 
-# ╔═╡ 0b93a760-5459-11eb-1359-5dbf4f8dd420
+# ╔═╡ c7b74ea0-5469-11eb-0ee4-73b2f96e3b07
+@bind frame PlutoUI.Slider(0:99, show_value=true)
+
+# ╔═╡ b336edc8-5522-11eb-009c-717fef97aff1
 begin
-	file = "U1.000tauR0.300.h5"
-	y = Pda.get_h5data(file, "config/$frame/y")
 	x = Pda.get_h5data(file, "config/$frame/x")
-	theta = Pda.get_h5data(file, "config/$frame/theta")
+	q = Pda.get_h5data(file, "config/$frame/direction")
+end
+
+# ╔═╡ 5a678c92-55ff-11eb-1300-b1148bd3b9c8
+begin
+	bins=100
+	gridx = LinRange(-0.5, 0.5, bins+1)
+	bins = length(gridx) -1
+    # initialize array to store number
+    m = zeros(bins)
+    # in a cell [a,b], particles that has a<=x<b is counted.
+    # for the last cell, x==b is also counted.
+    for i in 1:bins
+        for (position, localq) in zip(x,q)
+            if gridx[i] <=position <gridx[i+1]
+                m[i] += localq
+            end
+        end
+    end
+    # last cell: add particles on the right boundary
+	#m[end] += sum(x .== gridx[end])
+    # use bin centers as representative locations.
+    dx = diff(gridx)
+    bin_centers = gridx[1:end-1] + dx/2
+    # if normalize
+    #     n ./= dx *length(x)
+    # end
 end
 
 # ╔═╡ 305b5bb0-5459-11eb-1d3e-21bbe247b5ef
-loc, n = Pda.density1d(y, -0.5, 0.5)
-
-# ╔═╡ aa8cb766-5469-11eb-0866-3dc01bb893a8
-scatter(loc[2:end-1],n[2:end-1])
-
-# ╔═╡ 9665ef90-546a-11eb-11b4-5dc0a130aba5
-y1 = [val for val in y if abs(val) < 0.5]
-
-# ╔═╡ a6747bf4-546a-11eb-17b7-8d2f885b4574
-histogram(y1, label=nothing, framestyle=:box)
+scatter(bin_centers[2:end-1], m[2:end-1],framestyle=:box,label=nothing)
 
 # ╔═╡ Cell order:
 # ╠═fd8cab10-5458-11eb-3deb-dfba8e8d5152
+# ╠═8fa90742-5522-11eb-230f-89826748854e
 # ╠═c7b74ea0-5469-11eb-0ee4-73b2f96e3b07
-# ╟─0b93a760-5459-11eb-1359-5dbf4f8dd420
-# ╟─305b5bb0-5459-11eb-1d3e-21bbe247b5ef
-# ╠═aa8cb766-5469-11eb-0866-3dc01bb893a8
-# ╠═9665ef90-546a-11eb-11b4-5dc0a130aba5
-# ╠═a6747bf4-546a-11eb-17b7-8d2f885b4574
+# ╠═b336edc8-5522-11eb-009c-717fef97aff1
+# ╟─5a678c92-55ff-11eb-1300-b1148bd3b9c8
+# ╠═305b5bb0-5459-11eb-1d3e-21bbe247b5ef

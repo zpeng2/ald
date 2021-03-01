@@ -2,9 +2,9 @@ import ald
 import numpy as np
 import h5py
 
-U0 = 0.5
-tauR = 1.0
-particle = ald.RTP(U0=U0, tauR=tauR)
+U0 = 1
+tauR = 0.2
+particle = ald.Pareto(U0=U0, tauR=tauR)
 
 
 # still using 2D interface
@@ -14,9 +14,9 @@ domain = ald.Box(left=-0.5, right=0.5)
 
 ic = ald.InitialConfig(x=ald.Uniform(domain.left, domain.right))
 
-N = 1000000
+N = 400_000
 dt = 1e-4
-Nt = 4000000
+Nt = 4_000_000
 cfg = ald.Config(particle, domain, N=N, dt=dt, Nt=Nt)
 
 
@@ -35,7 +35,9 @@ file = "U{:.3f}tauR{:.3f}1D.h5".format(U0, tauR)
 #     pass
 # range to compute stats on configuration and print time.
 runner = ald.RangedRunner.from_backward_count(stop=cfg.Nt, freq=10000, count=50)
-configsaver = ald.ConfigSaver(runner, file, variables=["x"], unwrap=[False])
+configsaver = ald.ConfigSaver(
+    runner, file, variables=["x", "direction"], unwrap=[False, False]
+)
 # y = ald.MeanVariance(runner, "y", unwrap=True)
 eta = ald.ETA(ald.RangedRunner(start=0, stop=cfg.Nt, freq=50000))
 callbacks = [configsaver, eta]

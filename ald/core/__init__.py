@@ -1,4 +1,12 @@
-from .particle import AbstractParticle, AbstractRTP, ABP, RTP, Pareto, ExponentialRTP
+from .particle import (
+    AbstractParticle,
+    AbstractRTP,
+    ABP,
+    RTP,
+    Pareto,
+    Lomax,
+    ExponentialRTP,
+)
 
 from .boundary import AbstractDomain, Box, Disk
 
