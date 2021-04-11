@@ -55,11 +55,14 @@ end
 # ╔═╡ 9a9fdce3-7dbb-4c83-9b89-7336c2eb6814
 plot(tm, xv, framestyle = :box, label =nothing)
 
+# ╔═╡ 5b8de4e3-ed90-4c5d-8981-41956d0b602a
+plot(tm, xm, framestyle = :box, label =nothing)
+
 # ╔═╡ c97b8438-47a0-4e62-8894-205393818fcf
 begin
 	tfrac = Pda.get_h5data(file, "wallfraction/t")
 	wallfrac = Pda.get_h5data(file, "wallfraction/f")
-	plot(tfrac, wallfrac, xscale =:log10, framestyle = :box, label =nothing)
+	scatter(tfrac, wallfrac, framestyle = :box, label =nothing)
 end
 
 # ╔═╡ Cell order:
@@ -72,4 +75,5 @@ end
 # ╠═9c1091f3-27b0-460e-b3b0-135c81cae84f
 # ╠═17258ca3-14c6-4a2b-8f16-7fe746bae327
 # ╠═9a9fdce3-7dbb-4c83-9b89-7336c2eb6814
+# ╠═5b8de4e3-ed90-4c5d-8981-41956d0b602a
 # ╠═c97b8438-47a0-4e62-8894-205393818fcf
