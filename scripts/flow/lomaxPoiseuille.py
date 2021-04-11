@@ -136,6 +136,7 @@ class WallFraction(ald.Callback):
 
 if __name__ == "__main__":
     lH = [0.01, 0.1, 1]
-    Peg = [0.01, 0.1, 1, 10]
+    #Peg = [0, 0.01, 0.1, 1, 10]
+    Peg = [1, 2, 10]
     for peg in Peg:
         simulate(lH=1.0, Peg=peg, alpha=1.2)

@@ -229,9 +229,11 @@ class ConfigSaver(Callback):
 
     def get_config(self, variable, cfg, unwrap):
         # need to unwrap if requested
-        variable_gpu = getattr(cfg, variable)
+        # need to copy data! because it will be modified later.
+        variable_gpu = getattr(cfg, variable).copy()
         if unwrap:
-            variable_gpu += getattr(cfg, "pass" + variable)
+            variable_gpu += getattr(cfg, "pass" + variable).copy()
+        # need to copy to cpu
         return variable_gpu.get()
 
     def __call__(self, i, cfg):
