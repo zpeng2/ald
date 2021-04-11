@@ -2,14 +2,17 @@ import ald
 import numpy as np
 import h5py
 
-U0 = 1.0
-tauR = 0.3
-# specify RTP type
-particle = ald.ExponentialRTP(U0=U0, tauR=tauR)
+U0 = 5.0
+tauR = 1
+alpha = 1.2
 
-flow = ald.ZeroVelocity()
+# specify RTP type
+particle = ald.Lomax(U0=U0, tauR=tauR, alpha=alpha)
 
 H = 1.0
+uf = 0.1
+flow = ald.Poiseuille(uf=uf, H=H)
+
 domain = ald.Box(bottom=-H / 2, top=H / 2)
 
 
@@ -20,7 +23,7 @@ ic = ald.InitialConfig(
 )
 
 
-cfg = ald.Config(particle, domain, N=300000, dt=1e-4, Nt=4000000)
+cfg = ald.Config(particle, domain, N=100_000, dt=1e-4, Nt=4000000)
 
 # Specify the channel problem
 kernel = ald.RTPChannelKernel()

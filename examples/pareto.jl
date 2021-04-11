@@ -23,6 +23,9 @@ begin
 	import Pda
 end
 
+# ╔═╡ 2ea55a90-7e03-11eb-2849-c52e0bfcc500
+
+
 # ╔═╡ d54000a4-3cc1-11eb-3eb9-e57ecd5f138b
 @bind frame PlutoUI.Slider(0:499, show_value=true)
 
@@ -97,14 +100,6 @@ begin
 	ylabel!(L"x")
 end
 
-# ╔═╡ d17e649a-3d04-11eb-3a59-53ecb9580417
-begin
-	scatter(t2, y1, label=nothing, framestyle=:box)
-	plot!(t2, y1, lw=2, label=nothing)
-	xlabel!(L"t")
-	ylabel!(L"y")
-end
-
 # ╔═╡ 127bd560-3cc2-11eb-10d0-3f01f597307c
 begin
 	scatter(loc[2:end-1],n[2:end-1], framestyle=:box, label=nothing)#,yscale=:log10)
@@ -168,17 +163,17 @@ end
 
 # ╔═╡ Cell order:
 # ╠═6b732070-3cb2-11eb-15a0-65fd51108ed7
+# ╠═2ea55a90-7e03-11eb-2849-c52e0bfcc500
 # ╠═d54000a4-3cc1-11eb-3eb9-e57ecd5f138b
 # ╠═442a778a-3d06-11eb-1f3f-b5d1e42ffaca
 # ╠═d5f96e5a-3cfc-11eb-26de-414f6ec905a8
 # ╠═4d58dede-3d04-11eb-03ef-69cfd329dbff
 # ╠═535eb2b6-3d06-11eb-16b1-e3ebcc4e86f2
 # ╠═c36512f2-3d04-11eb-3afb-f3f2e62d07da
-# ╠═d17e649a-3d04-11eb-3a59-53ecb9580417
 # ╟─550980e0-3ccb-11eb-0884-03a9d8e523f7
 # ╠═ac910d60-3cc1-11eb-03a7-cb017e973698
 # ╠═127bd560-3cc2-11eb-10d0-3f01f597307c
-# ╟─92e63448-3ccc-11eb-1acf-3b4309d37ae2
+# ╠═92e63448-3ccc-11eb-1acf-3b4309d37ae2
 # ╠═edc909f8-3ccc-11eb-2a4c-31536c489723
 # ╠═4980b4d6-3d0a-11eb-2340-ed91b8805fc1
 # ╠═2294b9ec-3d0a-11eb-1a1f-7bb34b614a9c
