@@ -25,7 +25,7 @@ end
 
 
 # ╔═╡ ca6d567e-db4a-4d92-b7f3-1d0dc279d1b9
-file = "./lH1.000Peg1.000alpha1.200.h5"
+file = "./lH1.000Peg2.000alpha1.200.h5"
 
 # ╔═╡ 28d9e092-8bcf-436c-8b62-678710b64759
 @bind frame PlutoUI.Slider(0:99, show_value=true)
@@ -42,27 +42,30 @@ ybin, n = Pda.density1d(y, bins=100)
 # ╔═╡ b1d20efe-8e8e-44ca-8df3-9b24e5ebac2b
 scatter(ybin[2:end-1],n[2:end-1])
 
-# ╔═╡ 9c1091f3-27b0-460e-b3b0-135c81cae84f
-HDF5.h5open(file, "r")
+# ╔═╡ b5b16370-5799-4055-b15a-0ff430cec623
+Pda.get_h5attr(file, :tauR)
 
 # ╔═╡ 17258ca3-14c6-4a2b-8f16-7fe746bae327
 begin
 	tm = Pda.get_h5data(file, "x/t")
 	xm = Pda.get_h5data(file, "x/m")
 	xv = Pda.get_h5data(file, "x/v")
+	tauR = Pda.get_h5attr(file, "tauR")
+	alpha = Pda.get_h5attr(file, "alpha")
 end
 
 # ╔═╡ 9a9fdce3-7dbb-4c83-9b89-7336c2eb6814
-plot(tm, xv, framestyle = :box, label =nothing)
+scatter(tm[2:end], xv[2:end], framestyle = :box, label =nothing, xscale=:log10, yscale=:log10)
 
 # ╔═╡ 5b8de4e3-ed90-4c5d-8981-41956d0b602a
-plot(tm, xm, framestyle = :box, label =nothing)
+scatter(tm[2:end], xm[2:end], framestyle = :box, label =nothing)
 
 # ╔═╡ c97b8438-47a0-4e62-8894-205393818fcf
 begin
 	tfrac = Pda.get_h5data(file, "wallfraction/t")
 	wallfrac = Pda.get_h5data(file, "wallfraction/f")
-	scatter(tfrac, wallfrac, framestyle = :box, label =nothing)
+	scatter(tfrac[2:end]/tauR, wallfrac[2:end], framestyle = :box, label =nothing)
+	xlabel!(L"t/\tau_R")
 end
 
 # ╔═╡ Cell order:
@@ -72,7 +75,7 @@ end
 # ╠═62bde565-8ac4-4af4-834d-d2b716b9be50
 # ╠═e5c924fa-7fc1-4205-ab90-c5dc66b128dc
 # ╠═b1d20efe-8e8e-44ca-8df3-9b24e5ebac2b
-# ╠═9c1091f3-27b0-460e-b3b0-135c81cae84f
+# ╠═b5b16370-5799-4055-b15a-0ff430cec623
 # ╠═17258ca3-14c6-4a2b-8f16-7fe746bae327
 # ╠═9a9fdce3-7dbb-4c83-9b89-7336c2eb6814
 # ╠═5b8de4e3-ed90-4c5d-8981-41956d0b602a
