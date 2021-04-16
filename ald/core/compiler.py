@@ -23,16 +23,18 @@ extern "C" {
 // initialize RNG
 // passing in an array of states
 // each thread has to have its own RNG
-__global__ void initrand(curandState *__restrict__ state, const int N) {
-  int seed = 0;
+__global__ void initrand(curandStatePhilox4_32_10_t *state, const int N) {
+  int seed = 1234;
   int offset = 0;
+  /* Each thread gets same seed, a different sequence
+    number, no offset */
   for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
        tid += blockDim.x * gridDim.x) {
     curand_init(seed, tid, offset, &state[tid]);
   }
 }
 
-__device__ double uniform_rand(curandState *state, double a,
+__device__ double uniform_rand(curandStatePhilox4_32_10_t *state, double a,
                                 double b) {
 return a+(b-a)*curand_uniform_double(state);
 }

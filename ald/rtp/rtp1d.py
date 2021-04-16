@@ -18,7 +18,7 @@ template1DRTP = Template(
     """
 extern "C" {
 __global__ void draw_runtimes(double *tauR,
-    curandState *state,
+    curandStatePhilox4_32_10_t *state,
     const int N)
 { // for loop allows more particles than threads.
 for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
@@ -29,7 +29,7 @@ for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
 
 // draw +1/-1 uniformly.
 __global__ void draw_binary(int *arr,
-    curandState *state,
+    curandStatePhilox4_32_10_t *state,
     const int N)
 { // for loop allows more particles than threads.
 for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
@@ -50,7 +50,7 @@ for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
 __global__ void
 update(double *__restrict__ x,          // position x
        int *__restrict__ direction,      // +1 or -1
-       curandState *__restrict__ state, // RNG state
+       curandStatePhilox4_32_10_t *__restrict__ state, // RNG state
        double *__restrict__ tauR, // reorientation time for each active particle
        double *__restrict__ tau,  // time since last tumble
        double U0,                 // swim speed

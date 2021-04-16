@@ -32,7 +32,7 @@ ic_kernel = Template(
     """
 // initialize particle configuration
 extern "C" {
-__global__ void init_config(curandState *state,
+__global__ void init_config(curandStatePhilox4_32_10_t *state,
                             double *x,
                             double *y,
                             double *theta,

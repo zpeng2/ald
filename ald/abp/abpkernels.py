@@ -29,7 +29,7 @@ update(double *__restrict__ xold,       // old position in x
        double *__restrict__ theta,      // orientation angle
        int *__restrict__ passx,         // total boundary crossings in x
        int *__restrict__ passy,         // total boundary crossings in y
-       curandState *__restrict__ state, // RNG state
+       curandStatePhilox4_32_10_t *__restrict__ state, // RNG state
        double U0,                 // ABP swim speed
        double dt,   // time step
        int N{{arg_list}}
@@ -39,10 +39,12 @@ update(double *__restrict__ xold,       // old position in x
 // for loop allows more particles than threads.
 for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
     tid += blockDim.x * gridDim.x) {
+// can generate two random numbers at the same time
+rn2 = curand_normal2_double(&state[tid]);
 // next update the position and orientation
-x[tid] = xold[tid] + dt * {{ux}} + dt * U0 * cos(thetaold[tid]) + {{xB}}*curand_normal_double(&state[tid]);
+x[tid] = xold[tid] + dt * {{ux}} + dt * U0 * cos(thetaold[tid]) + {{xB}}*rn2.x;
 
-y[tid] = yold[tid] + dt * {{uy}} + dt * U0 * sin(thetaold[tid])+ {{yB}}*curand_normal_double(&state[tid]);
+y[tid] = yold[tid] + dt * {{uy}} + dt * U0 * sin(thetaold[tid])+ {{yB}}*rn2.y;
 
 // update orientation
 theta[tid] = thetaold[tid] + dt*{{omega}} + {{thetaB}}*curand_normal_double(&state[tid]);

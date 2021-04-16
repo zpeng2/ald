@@ -43,7 +43,7 @@ class AbstractConfig:
         self.passy = gpuarray.GPUArray(N, dtype=np.int32)
         # curandstate array.
         sizeof_state = pycuda.characterize.sizeof(
-            "curandStateXORWOW", "#include <curand_kernel.h>"
+            "curandStatePhilox4_32_10", "#include <curand_kernel.h>"
         )
         self.state = cuda.mem_alloc(N * sizeof_state)
         # current time
@@ -66,6 +66,7 @@ class AbstractConfig:
             f.attrs["dt"] = self.dt
             f.attrs["Nt"] = self.Nt
             f.attrs["N"] = self.N
+
 
 class Config(AbstractConfig):
     def __init__(self, particle, domain, N, dt, Nt):
