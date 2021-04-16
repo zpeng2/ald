@@ -24,8 +24,8 @@ class RangedRunner(CallbackRunner):
     """Run callback if an index is in a range."""
 
     def __init__(self, start, stop, freq):
-        # python range is end-exclusive.
-        self._range = range(start, stop + freq, freq)
+        # make a range that includes the stop as a point
+        self._range = reversed(range(stop, start - 1, -freq))
 
     @classmethod
     def from_forward_count(cls, start=0, freq=1, count=10):
