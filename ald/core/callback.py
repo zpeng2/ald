@@ -25,7 +25,12 @@ class RangedRunner(CallbackRunner):
 
     def __init__(self, start, stop, freq):
         # make a range that includes the stop as a point
-        self._range = reversed(range(stop, start - 1, -freq))
+        # number of groups that have freq numbers
+        k = (stop - start + 1) // freq
+        start = stop - (k - 1) * freq
+        # python range is not right-end inclusive
+        stop = stop + 1
+        self._range = range(start, stop, freq)
 
     @classmethod
     def from_forward_count(cls, start=0, freq=1, count=10):
