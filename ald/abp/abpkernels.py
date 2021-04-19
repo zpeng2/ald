@@ -40,7 +40,7 @@ update(double *__restrict__ xold,       // old position in x
 for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < N;
     tid += blockDim.x * gridDim.x) {
 // can generate two random numbers at the same time
-rn2 = curand_normal2_double(&state[tid]);
+double2 rn2 = curand_normal2_double(&state[tid]);
 // next update the position and orientation
 x[tid] = xold[tid] + dt * {{ux}} + dt * U0 * cos(thetaold[tid]) + {{xB}}*rn2.x;
 

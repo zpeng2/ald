@@ -2,15 +2,23 @@ import ald
 import numpy as np
 import h5py
 
-U0 = 1.0
-tauR = 1.2
 
+Pe = 1
+lH = 10
+ld = 30
+# Set scales to compute other parameters.
+DT=1.0
+H = 1.0
+uf = Pe*DT/H
+ell = lH*H
+delta = ell/ld
+tauR  =delta**2/DT
+U0 = ell/tauR
 
 # specify RTP type
-particle = ald.ExponentialRTP(U0=U0, tauR=tauR)
+particle = ald.ABP(U0=U0, tauR=tauR, DT=DT)
 
-H = 1.0
-flow = ald.ZeroVelocity()
+flow = ald.Poiseuille(uf=uf, H=H)
 
 
 domain = ald.Box(bottom=-H / 2, top=H / 2, left=-H / 2, right=H / 2)
@@ -23,18 +31,41 @@ ic = ald.InitialConfig(
 )
 
 
-cfg = ald.Config(particle, domain, N=100_000, dt=1e-4, Nt=4000000)
+# determine timescales in our problem
+# flow timescale
+timescales = []
+if uf != 0.0:
+    timescales.append(H / uf)
+if U0 != 0.0:
+    timescales.append(H / U0)
+timescales.append(tauR)
+if DT != 0.0:
+    timescales.append(H**2/DT)
+tmin = np.min(timescales)
+tmax = np.max(timescales)
+
+# time step
+dt = 1e-3 * tmin
+# final time
+tf = 1000 * tmax
+# total steps
+Nt = int(tf / dt) +1
+
+# number of ABPs,
+N = 200_000
+
+cfg = ald.Config(particle, domain, N=N, dt=dt, Nt=Nt)
 
 # Specify the channel problem
-kernel = ald.RTPChannelKernel()
+kernel = ald.ABPChannelKernel()
 
-compiler = ald.RTPCompiler(kernel, cfg, flow, ic)
+compiler = ald.ABPCompiler(kernel, cfg, flow, ic)
 
 compiler.compile()
 
-simulator = ald.RTPSimulator(cfg, compiler)
+simulator = ald.ABPSimulator(cfg, compiler)
 
-file = "U{:.3f}tauR{:.3f}.h5".format(U0, tauR)
+file = "ABPU{:.3f}tauR{:.3f}DT{:.3f}.h5".format(U0, tauR, DT)
 # create an empty file
 # with h5py.File(file, "w") as f:
 #     pass
