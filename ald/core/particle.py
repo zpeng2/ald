@@ -49,7 +49,7 @@ exponential_runtime_device = """
 // tauR is the mean runtime, inverse of lambda.
 // https://en.wikipedia.org/wiki/Exponential_distribution#Generating_exponential_variates
 extern "C" {
-__device__ double exponential_runtime(curandState *state, double tauR) {
+__device__ double exponential_runtime(curandStatePhilox4_32_10_t *state, double tauR) {
   double U = curand_uniform_double(state);
   return -log(U)*tauR;
 }
@@ -79,7 +79,7 @@ pareto_runtime_device = """
 // https://en.wikipedia.org/wiki/Pareto_distribution#Random_sample_generation
 // taum is the minimum run time, alpha is the exponent
 extern "C" {
-__device__ double pareto_runtime(curandState *state, double tauR,
+__device__ double pareto_runtime(curandStatePhilox4_32_10_t *state, double tauR,
                                 double alpha) {
 // !! tauR is the mean runtime, which is taum*alpha/(alpha-1)
 double taum = (alpha - 1.0) * tauR / alpha;
@@ -114,7 +114,7 @@ lomax_runtime_device = """
 // generate Lomax
 // https://en.wikipedia.org/wiki/Lomax_distribution
 extern "C" {
-__device__ double lomax_runtime(curandState *state, double tauR,
+__device__ double lomax_runtime(curandStatePhilox4_32_10_t *state, double tauR,
                                 double alpha) {
 // !! tauR is the mean runtime
 double lam = (alpha - 1.0) * tauR;

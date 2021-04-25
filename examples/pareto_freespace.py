@@ -5,7 +5,7 @@ import h5py
 U0 = 1.0
 
 
-alpha = 3.0
+alpha = 1.2
 tauR = 1.0
 L = 1.0  # simulation box dimension.
 particle = ald.Pareto(U0=U0, tauR=tauR)
