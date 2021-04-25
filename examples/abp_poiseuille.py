@@ -4,8 +4,8 @@ import h5py
 
 
 Pe = 1
-lH = 10
-ld = 30
+lH = 1
+ld = 2
 # Set scales to compute other parameters.
 DT=1.0
 H = 1.0
@@ -52,7 +52,7 @@ tf = 1000 * tmax
 Nt = int(tf / dt) +1
 
 # number of ABPs,
-N = 200_000
+N = 300_000
 
 cfg = ald.Config(particle, domain, N=N, dt=dt, Nt=Nt)
 
@@ -65,7 +65,7 @@ compiler.compile()
 
 simulator = ald.ABPSimulator(cfg, compiler)
 
-file = "ABPU{:.3f}tauR{:.3f}DT{:.3f}.h5".format(U0, tauR, DT)
+file = "Pe{:.3f}lH{:.3f}ld{:.3f}.h5".format(Pe, lH, ld)
 # create an empty file
 # with h5py.File(file, "w") as f:
 #     pass
@@ -96,3 +96,5 @@ cfg.save2h5(file)
 # save mean variance of x
 x.save2h5(file, "x")
 y.save2h5(file, "y")
+# save flow information
+flow.save2h5(file)
